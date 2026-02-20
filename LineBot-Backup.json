@@ -1,0 +1,210 @@
+{
+  "name": "LineBot Uptodate",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.events[0].message.text }}",
+        "options": {
+          "systemMessage": "นายชื่อสมบอทเป็นผู้ช่วยตอบคำถามที่เป็นผู้ชายของบริษัท บริษัท ซีสเต็ม อินโนเวชั่น แอนด์ ซัพพลาย จำกัด \nประกอบธุรกิจประเภท กิจกรรมวิชาชีพวิทยาศาสตร์และกิจกรรมทาง วิชาการ โดยให้บริการด้าน กิจกรรมงานวิศวกรรมและการให้คำปรึกษาทางด้านเทคนิคเเละ Fibre optic ที่เกี่ยวข้อง\n\nหน้าที่ของคุณคือ ช่วยตอบคำถามบนGoogle spreadsheets เเละใส่ข้อมูลให้ถูกต้องตรงตาม column บน Google spreadsheets\nตอบคำถามอย่างสุภาพ อ่านง่าย กระชับ ใช้ภาษาที่เข้าใจง่ายชัดเจน\n\nกฏ  : \n1) ห้ามเดาข้อมูล นอกเหนือจากข้อมูลที่อ่านจากตาราง\n2)ถ้าพบข้อมูลให้ตอบสั้นๆกระชับเท่านั้น เเละต้องมีเเหล่งอ้างอิงข้อมูลที่นำมาตอบ\n3) ใช้คำสุภาพเเละจัดข้อความให้สวยงาม ใช้ Emoji ได้ตามสะดวก"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ae009185-33e9-435c-ae3f-de15c4af7b07",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer tOtuDe7LHvdtC8rC5jyrS0K6Yfo6+SKGZ8kzlUCaVXVQxs0tumXTEaYfvaiM/TK0BtVDJeMWSeQ5Y4LPS1DWYhHDfXKM0b81+0MIkTshYTFhVtTyo7f3tKGI6wYuv2rk8sWmDvuxGzf4K8sbQpDcsgdB04t89/1O/w1cDnyilFU="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Webhook Line').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.output.slice(0,4999).replace(/\"/gm,\n'').replace(/[\"\"]/gm, '').replace(/\\n/gm,'\\\\n') }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "db67395e-dd99-4391-b709-6ba27d4619d1",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $json.body.events[0].source.groupId || $json.body.events[0].source.userId }}",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        208
+      ],
+      "id": "d41eaa0a-61d3-41b9-95f8-272501731ab7",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1A2iQkc2ZEDq6GJJLsF6RBbmkHTSyVs2xJp9lym3kSRk",
+          "mode": "list",
+          "cachedResultName": "LAB งานลงระบบ NodeB2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A2iQkc2ZEDq6GJJLsF6RBbmkHTSyVs2xJp9lym3kSRk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1430076532,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1A2iQkc2ZEDq6GJJLsF6RBbmkHTSyVs2xJp9lym3kSRk/edit#gid=1430076532"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        656,
+        240
+      ],
+      "id": "ce8b9134-9078-44cc-9cde-2c3a78530d8e",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "puclpUHUgB0mvCcx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        192
+      ],
+      "id": "a96800b5-4947-4aff-9ed6-d32705601f32",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "7UZnCsof2sfrsWj2",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "LineBotGSheet",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "26ff6bcd-90f7-446e-bcb6-84740d21f894",
+      "name": "Webhook Line",
+      "webhookId": "6acb1e4c-68f0-4d9d-955c-a84c2ccb38b8"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Line": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "22040eb4-6073-49dc-9673-41ccd742aeba",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05944909a8ccb3ffdf59c45978efdd311c90ab3658ab8e0fd81f135870dfea78"
+  },
+  "id": "La4zu75u4uXfPI90",
+  "tags": []
+}
