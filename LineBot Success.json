@@ -1,0 +1,492 @@
+{
+  "name": "LineBot Success",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Line Messaging Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "You are a JSON generator.\n\nYou MUST return ONLY pure JSON.\nNo markdown.\nNo explanation.\nNo text before or after.\n\nReturn this exact structure:\n\n{\n  \"ticket_no\": \"\",\n  \"site_code\": \"\",\n  \"status\": \"\",\n  \"severity\": \"\",\n  \"priority\": \"\",\n  \"subject\": \"\",\n  \"description\": \"\",\n  \"owner\": \"\",\n  \"action_team\": \"\",\n  \"fault_date\": \"\",\n  \"expected_date\": \"\",\n  \"sccd\": \"\"\n}\n\nIf you need to check data from Google Sheets,\nyou MUST call the tool to retrieve rows before answering.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        512,
+        -128
+      ],
+      "id": "3047a73f-5cbe-43c9-b469-7db34ee3034a",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Line Messaging Trigger').item.json.source.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        608,
+        48
+      ],
+      "id": "ab5412d4-1ea9-44f2-b88a-a04c09fee1b4",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2097907540,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit#gid=2097907540"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        752,
+        48
+      ],
+      "id": "582a6281-d917-42f9-951a-9903c252a7b4",
+      "name": "Get row(s) in sheet in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "puclpUHUgB0mvCcx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json.message.text;\n\n// ดึงค่าด้วย regex\nfunction getValue(label) {\n  const regex = new RegExp(label + '\\\\s*:\\\\s*(.*)');\n  const match = text.match(regex);\n  return match ? match[1].trim() : '';\n}\n\nreturn [\n  {\n    ticket_no: getValue('TicketNo'),\n    ticket_type: getValue('Type'),\n    status: getValue('Status'),\n    owner_team: getValue('OwnerTeam'),\n    action_team: getValue('actionTeam'),\n    severity: getValue('Severity'),\n    priority: getValue('Priority'),\n    subject: getValue('Subject'),\n    description: getValue('Description'),\n    fault_datetime: getValue('FaultDate'),\n    expected_datetime: getValue('ExpectedDate'),\n    open_ticket_datetime: getValue('OpenTicketDate'),\n    start_action_datetime: getValue('StartActionDate'),\n    restoration_datetime: getValue('RestorationDate'),\n    closed_ticket_datetime: getValue('ClosedTicketDate'),\n    open_ticket_by: getValue('OpenTicketName'),\n    closed_ticket_by: getValue('ClosedTicketName'),\n    cause_name: getValue('CauseName'),\n    sub_cause_name: getValue('SubCauseName'),\n    impact_sub: getValue('Impactsub'),\n    sccd_url: getValue('SCCD url')\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -128
+      ],
+      "id": "8a4ebeba-e807-4925-af25-51e526f1496e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "events": [
+          "*"
+        ]
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
+      "typeVersion": 1,
+      "position": [
+        32,
+        -128
+      ],
+      "id": "5ece3d9c-9a6a-4811-97dc-33ba27c0017b",
+      "name": "Line Messaging Trigger",
+      "webhookId": "45c3904b-e4f0-4b37-9d59-a645e274e975",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "gXIdfzTft1u7Kjhs",
+          "name": "Line Messaging account 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        464,
+        48
+      ],
+      "id": "bf0aee97-630c-449f-b8d9-fca9454fb635",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "kwDxaKOKE09qeA82",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Line Messaging Trigger').item.json.source.userId }}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{  $('Line Messaging Trigger').item.json.message.quoteToken }}",
+              "text": "=📌 Ticket: {{$json.ticket_no}}\n📍 Site: {{$json.site_code}}\n📊 Status: {{$json.status}}\n🚨 Severity: {{$json.severity}}\n⚡ Priority: {{$json.priority}}\n\n📝 Subject:\n{{$json.subject}}\n\n📄 Description:\n{{$json.description}}\n\n👤 Owner: {{$json.owner}}\n👷 Action Team: {{$json.action_team}}\n\n⏱ Fault Date: {{$json.fault_date}}\n📅 Expected Date: {{$json.expected_date}}\n\n🔗 SCCD:\n{{$json.sccd}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        -80
+      ],
+      "id": "0ed98c93-37a0-4caa-84f5-6a108abe43dc",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "gXIdfzTft1u7Kjhs",
+          "name": "Line Messaging account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let data = item.json;\n\n  // ถ้า AI ส่งมาเป็น string ให้ parse\n  if (typeof data === \"string\") {\n    data = JSON.parse(data);\n  }\n\n  // ถ้าอยู่ใน key ชื่อ output\n  if (typeof data.output === \"string\") {\n    data = JSON.parse(data.output);\n  }\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -128
+      ],
+      "id": "f70cef7b-8950-4401-894e-012b6275cb3b",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n\n  let raw = item.json;\n\n  try {\n    if (raw.output && typeof raw.output === \"string\") {\n      raw = JSON.parse(raw.output);\n    } \n    else if (raw.text && typeof raw.text === \"string\") {\n      raw = JSON.parse(raw.text);\n    } \n    else if (typeof raw === \"string\") {\n      raw = JSON.parse(raw);\n    }\n  } catch (e) {\n    raw = {};\n  }\n\n  return { json: raw };\n\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -128
+      ],
+      "id": "77e9ba0b-2cf0-489f-a0b4-4a4ca6c02943",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        -128
+      ],
+      "id": "e4017768-33cf-4de5-901d-2e4aad3e7145",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0774667d-3fc0-4909-88f1-03bb69fd48b9",
+              "leftValue": "true",
+              "rightValue": "false",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -128
+      ],
+      "id": "b22a13c6-bb47-430c-ab7c-c969c1f2f578",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging Trigger\nรับข้อความจากผู้ใช้ผ่าน LINE Official Account\nOutput ที่ได้:\nuserId\nmessage text\nreplyToken",
+        "height": 128,
+        "width": 310
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "07da5f8f-fcbb-4a20-b689-7b0266eee9e8",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Code in JavaScript\nหน้าที่:\nจัดรูปแบบข้อมูลจาก LINE ให้เหลือเฉพาะข้อมูลที่ต้องใช้ \nเช่นuserId ,text เพื่อส่งค่าเข้า AI Agent",
+        "height": 128,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -112,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "470e8b70-ec83-49dd-9127-315b974b57f2",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Code in JavaScript1\nหน้าที่:\nเตรียม prompt / format ข้อมูล\nจัดรูปแบบข้อความให้ AI อ่านง่าย\nหรือบังคับ format ให้ AI ส่งกลับเป็น JSON",
+        "height": 128,
+        "width": 288
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        240,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "4c2e2719-3798-40de-a289-ca1cf0a9129e",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "AI Agent\nหน้าที่หลัก:\nวิเคราะห์ข้อความจากผู้ใช้\nแปลงข้อมูลเป็น JSON ตามโครงสร้าง ticket\nสามารถเรียก Tool (Google Sheets) ได้ถ้าจำเป็น\nเชื่อมต่อกับ:\nGoogle Gemini Chat Model → ใช้ประมวลผลข้อความ\nSimple Memory → เก็บ context สนทนา\nGoogle Sheets (Tool) → ใช้อ่านข้อมูลจาก sheet",
+        "height": 192,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "ecdf7ac0-c9da-44fe-8db3-22b78295fcde",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "Code in JavaScript2\nหน้าที่:\nParse output จาก AI Agent\nแปลง string JSON → object JSON\nป้องกัน error กรณี AI ส่งกลับมาเป็น string",
+        "height": 128,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        880,
+        -448
+      ],
+      "typeVersion": 1,
+      "id": "ed5a148b-6b1e-4745-900c-a9222eb3d555",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "Code in JavaScript3\nหน้าที่:\nจัด format ข้อความตอบกลับ LINE\nเช่น แปลง JSON เป็นข้อความอ่านง่าย \nเช่น:\nTicket: TT12345\nSite: SKO6722X\nStatus: ASSIGNED\n...",
+        "height": 176,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1232,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "40c264fc-0245-4a7b-88ab-df21f46450ba",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "IF Node\nหน้าที่:\nตรวจสอบว่ามีข้อมูลครบหรือไม่\nเช่น:\nticket_no ไม่ว่าง\nstatus ไม่ว่าง\nถ้าผ่าน → ส่ง LINE\nถ้าไม่ผ่าน → อาจส่งข้อความ error",
+        "height": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1488,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "8339af70-622b-42b0-96e5-6d0c9ae213ff",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging (Send)\nหน้าที่:\nส่งข้อความกลับไปยัง user ผ่าน LINE\nใช้:\nuserId จาก Trigger\nmessage text จาก Code node ก่อนหน้า",
+        "height": 144,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        -464
+      ],
+      "typeVersion": 1,
+      "id": "31e55bf1-c3fb-4d8c-95b8-4d4aefb827ce",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "────────────────────────────\n📌 LINE Ticket Automation Workflow\n────────────────────────────\n1️⃣ รับข้อความจากผู้ใช้\nLINE User\n↓\nLine Messaging Trigger\n\n2️⃣ เตรียมข้อมูลเบื้องต้น\n↓\nClean Data\nExtract userId\nExtract message text\n↓\nPrepare Prompt\nบังคับโครงสร้าง JSON\nกำหนด field ที่ต้องได้ครบ\n\n3️⃣ วิเคราะห์ด้วย AI\n↓\nAI Agent\nวิเคราะห์ข้อความ\nจัดโครงสร้าง Ticket\nเรียก Google Sheet (ถ้าจำเป็น)\nส่งออกเป็น JSON\n\n4️⃣ จัดการผลลัพธ์\n↓\nParse JSON\nแปลง String → Object\n↓\nFormat Message\nจัดรูปแบบให้อ่านง่าย\n↓\nValidate Data\nตรวจสอบค่าว่าง\nตรวจสอบความถูกต้อง\n\n5️⃣ ส่งกลับผู้ใช้\n↓\nLine Messaging (Send)\nส่งข้อความสรุปกลับ LINE\n────────────────────────────\n✅ Result:\nผู้ใช้ส่งข้อความ → ระบบสร้าง Ticket แบบ Structured → ตรวจสอบ → ส่งกลับอัตโนมัติ\n────────────────────────────",
+        "height": 896,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        560,
+        -1440
+      ],
+      "typeVersion": 1,
+      "id": "35f1b2d3-4382-4ea5-823b-5a19957493bf",
+      "name": "Sticky Note8"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet in Google Sheets": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "dynamic",
+    "timezone": "Asia/Bangkok",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "0d6e9834-2848-4002-9654-28358177ddee",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05944909a8ccb3ffdf59c45978efdd311c90ab3658ab8e0fd81f135870dfea78"
+  },
+  "id": "pXJEfuvpdS7mo7te",
+  "tags": []
+}
