@@ -1,0 +1,1911 @@
+{
+  "name": "LineBot-SYS2//Success",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=={{ $json.text }}",
+        "options": {
+          "systemMessage": "You are a deterministic Ticket Parsing Engine.\n\nYou extract structured ticket data from raw user messages.\n\nYou MUST follow every rule strictly.\n\n━━━━━━━━━━━━━━━━━━━\nABSOLUTE OUTPUT RULES\n━━━━━━━━━━━━━━━━━━━\n\n1. Output ONLY valid JSON.\n2. Do NOT wrap in markdown.\n3. Do NOT explain anything.\n4. Do NOT add extra text.\n5. Do NOT add extra keys.\n6. Do NOT rename keys.\n7. Do NOT nest objects.\n8. Do NOT calculate or infer values.\n9. Do NOT translate.\n10. Do NOT modify formats.\n11. If value is missing → return null.\n12. If value is \"-\" → return null.\n13. JSON must be flat.\n14. No trailing commas.\n\nIf no fields are found, still return full JSON with all keys set to null.\n\n━━━━━━━━━━━━━━━━━━━\nREQUIRED OUTPUT FORMAT\n━━━━━━━━━━━━━━━━━━━\n\n{\n\"ticket_no\": string | null,\n\"severity\": \"NSA1\" | \"NSA2\" | \"NSA3\" | \"NSA4\" | null,\n\"fault_date\": string | null,\n\"expected_date\": string | null,\n\"owner\": string | null,\n\"go_time\": string | null,\n\"start_time\": string | null,\n\"done_time\": string | null,\n\"status\": string | null\n}\n\n━━━━━━━━━━━━━━━━━━━\nEXTRACTION RULES\n━━━━━━━━━━━━━━━━━━━\n\nticket_no:\n- Extract ONLY if it matches regex: TT\\d+\n- Return full match only.\n- Ignore \"Ticket: -\" or empty values.\n- If not found → null.\n\nseverity:\n- Must match exactly: NSA1 | NSA2 | NSA3 | NSA4\n- Case sensitive.\n- If not found → null.\n\nfault_date:\n- Extract full datetime string after:\n  \"FaultDate :\" OR\n  \"Fault :\" OR\n  \"FaultDate:\" OR\n  \"Fault:\"\n- Return exact string after colon.\n- If value is \"-\" → null.\n- If not found → null.\n\nexpected_date:\n- Extract full datetime string after:\n  \"Expected :\" OR\n  \"ExpectedDate :\" OR\n  \"Expected:\" OR\n  \"ExpectedDate:\"\n- Return exact string after colon.\n- If value is \"-\" → null.\n- If not found → null.\n\nowner:\n- Extract exact value after:\n  \"OpenTicketName :\" OR\n  \"OwnerTeam :\" OR\n  \"Owner :\" OR\n  \"ผู้แจ้งงาน :\"\n- Return exact string after colon.\n- If value is \"-\" → null.\n- If not found → null.\n\ngo_time:\n- Extract using regex: !Go#(\\d{2}:\\d{2})\n- Return only HH:mm\n- If not found → null.\n\nstart_time:\n- Extract using regex: !Star#(\\d{2}:\\d{2})\n- Return only HH:mm\n- If not found → null.\n\ndone_time:\n- Extract using regex: !Done#(\\d{2}:\\d{2})\n- Return only HH:mm\n- If not found → null.\n\nstatus:\n- Extract exact value after:\n  \"Status :\" OR\n  \"สถานะ :\"\n- Return exact string after colon.\n- If value is \"-\" → null.\n- If not found → null.\n\nticket_no:\nMatch regex /TT\\d+/i\n\nseverity:\nMatch /NSA[1-4]/i\nReturn uppercase (NSA1–NSA4)\n\nfault_date:\nMatch /FaultDate\\s*:\\s*(.+)/i\n\nowner:\nMatch /OpenTicketName\\s*:\\s*(.+)/i OR /OwnerTeam\\s*:\\s*(.+)/i\n\nstatus:\nMatch /Status\\s*:\\s*(.+)/i\n\ngo_time:\nMatch /!Go#(\\d{2}:\\d{2})/i\n\nstart_time:\nMatch /!Star#(\\d{2}:\\d{2})/i\n\ndone_time:\nMatch /!Done#(\\d{2}:\\d{2})/i\n\n━━━━━━━━━━━━━━━━━━━\nFINAL INSTRUCTION\n━━━━━━━━━━━━━━━━━━━\n\nReturn JSON only.\nAlways include all keys.\nNever omit keys.\nNever hallucinate values.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        -128
+      ],
+      "id": "d38d7771-8b0a-4272-8b7d-6d0dd688b51c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Line Messaging Trigger').item.json.source.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        96
+      ],
+      "id": "731b5816-5d01-4daf-9de1-c05428ae2102",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "events": [
+          "message"
+        ]
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -128
+      ],
+      "id": "ce766736-4fa2-4477-9a76-e8647acb58f8",
+      "name": "Line Messaging Trigger",
+      "webhookId": "846ec9c9-c682-4efb-9811-5db936748e47",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "aJgZGG757I8itMKK",
+          "name": "Bot-SYS2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "=models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        432,
+        64
+      ],
+      "id": "685a5a20-e53d-4d52-9790-574df94b7597",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WuOAgQNbBp0HiPws",
+          "name": "Google Gemini(PaLM) - UPDATE23-02-2026"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let data = item.json;\n\n  // ถ้า AI ส่งมาเป็น string ให้ parse\n  if (typeof data === \"string\") {\n    data = JSON.parse(data);\n  }\n\n  // ถ้าอยู่ใน key ชื่อ output\n  if (typeof data.output === \"string\") {\n    data = JSON.parse(data.output);\n  }\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -208
+      ],
+      "id": "0328b06f-ad2f-4714-8789-ea56a8d27edf",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "content": "1️⃣ Line Messaging Trigger\nรับข้อความจาก LINE OA\ntext\nreplyToken\nuserId",
+        "height": 176,
+        "width": 214
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -960,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "8d022a22-0082-4e63-a751-c71f5583b86c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "3️⃣ AI Agent\nแปลงข้อความธรรมดา → JSON โครงสร้างมาตรฐาน\nField ที่ต้องได้:\nticket_no\n\nseverity\nfault_date\nexpected_date\nowner\ngo_time\nstart_time\ndone_time\nstatus",
+        "height": 272,
+        "width": 336
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -560,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "51ff1190-48b0-4967-8161-ade6ba617866",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "5️⃣ คำนวณ SLA\nSeverity   |    SLA\nNSA1\t |  4 ชั่วโมง\nNSA2\t |  8 ชั่วโมง\nNSA3\t | 14 ชั่วโมง\nNSA4\t | 24 ชั่วโมง\n\nExpected Date = fault_date + SLA\nTimeZone: Asia/Bangkok",
+        "height": 240,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -48,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "9d4c7516-c7a5-4af4-981a-a5fe9a5b6b3f",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "7️⃣ สร้าง Status อัตโนมัติ\nมี done_time → Done\nมี start_time → In Progress\nมี go_time → On Site\nไม่มีเลย → Open",
+        "height": 240,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "a6c01ad9-f087-4f64-8bc3-4c36dcfc868b",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "8️⃣ ส่งข้อความกลับ LINE\n\nตัวอย่างผลลัพธ์:\n📌 Ticket: TT12345\n⚡ Severity: 🚨 NSA1\n📅 Fault: 28/12/2025 23:45\n📆 Expected: 29/12/2025 03:45\n🚗 Go: -\n🔧 Start: -\n✅ Done: -\n📍 Status: Open",
+        "height": 240,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        672,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "9119ef54-9878-407d-953f-13b04d3fea85",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "IF Node\nหน้าที่:\nตรวจสอบว่ามีข้อมูลครบหรือไม่\nเช่น:\nticket_no ไม่ว่าง\nstatus ไม่ว่าง\nถ้าผ่าน → ส่ง LINE\nถ้าไม่ผ่าน → อาจส่งข้อความ error",
+        "height": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "4cebc26e-b40e-4205-8682-109ec3b8fe61",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging (Send)\nหน้าที่:\nส่งข้อความกลับไปยัง user ผ่าน LINE\nใช้:\nuserId จาก Trigger\nmessage text จาก Code node ก่อนหน้า",
+        "height": 144,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1488,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "8173b995-c166-4ba1-9b1f-424f43a40f37",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "ภาพรวม\n────────────────────────────\n📌 LINE Ticket Automation Workflow\n1️⃣ Line Messaging Trigger\nรับข้อความจาก LINE OA\ntext\nuserId\nreplyToken\n⬇\n\n2️⃣ Detect Mode (Code)\nวิเคราะห์ข้อความว่าเป็นโหมดอะไร\nMode ที่เป็นไปได้:\nupdate_ticket\nquery_ticket\ntoday_summary\nquery_site\nunknown\n\n⬇\n\n3️⃣ IF – แยกเส้นทาง\nตรวจสอบ mode\nถ้าเป็น query → ไป AI Agent\nถ้าเป็น update_ticket → ไปขั้นตอนสร้าง/บันทึก Ticket\n⬇\n\n4️⃣ AI Agent\nวิเคราะห์ข้อความ\nแปลงเป็น JSON โครงสร้างมาตรฐาน\nField ที่ต้องได้:\nticket_no\nseverity\nfault_date\nexpected_date\nowner\ngo_time\nstart_time\ndone_time\nstatus\n⬇\n\n5️⃣ Parse JSON\nตรวจสอบว่า JSON ถูกต้อง\nParse ได้\nKey ครบ\nถ้าไม่ครบ → Error\n⬇\n\n6️⃣ คำนวณ SLA (Edit Fields)\nSeverity → SLA ชั่วโมง\nNSA1 = 4 ชม\nNSA2 = 8 ชม\nNSA3 = 14 ชม\nNSA4 = 24 ชม\nExpected Date = fault_date + SLA\nTimeZone: Asia/Bangkok\n\n⬇\n\n7️⃣ Append Google Sheet\nบันทึกข้อมูล Ticket ลง Google Sheet\n⬇\n\n8️⃣ Normalize Ticket Data\nทำความสะอาดข้อมูล\nสร้าง Status อัตโนมัติ\nStatus Logic:\nมี done_time → Done\nมี start_time → In Progress\nมี go_time → On Site\nไม่มีเลย → Open\n\n⬇\n\n9️⃣ IF ตรวจข้อมูลก่อนส่ง\nเช็คว่า ticket_no ไม่ว่าง\nถ้าผ่าน → ส่ง LINE\nถ้าไม่ผ่าน → ส่งข้อความ error\n\n⬇\n\n🔟 Line Messaging (Send)\nส่งข้อความสรุปกลับไปยังผู้ใช้\n\n────────────────────────────\n✅ Result\nUser ส่งข้อความ → ระบบสร้าง Ticket → คำนวณ SLA → บันทึก → ส่งสรุปกลับอัตโนมัติ\n────────────────────────────",
+        "height": 1696,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        -2224
+      ],
+      "typeVersion": 1,
+      "id": "0fad679d-9525-44f8-bfc8-48bbddd4161c",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging ใช้ Webhook Production \nได้เเล้ว (บอททำงาน 24hrs)",
+        "height": 80,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1232,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "61ca3f64-3fe9-40cb-86ed-0437349aa843",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y",
+          "mode": "list",
+          "cachedResultName": "Realสำเนาของ LAB งานลงระบบ NodeB2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1430076532,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y/edit#gid=1430076532"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Region": "=",
+            "TT No. / PW No.": "=",
+            "Source": "=",
+            "TT : ที่เคลียร์โดยไม่ต้องซ่อม": "=",
+            " Destination": "=",
+            "วันที่ Ticket เปิด": "=",
+            "เวลาที่เปิด Ticket": "=",
+            "ทีม": "=",
+            "ขนาดทีม\n(จ.น.คน)": "=",
+            "วันที่ออกเดินทาง": "=",
+            "เวลาที่ออกเดินทาง": "=",
+            "วันที่เริ่มซ่อม": "=",
+            "เวลาที่เริ่มซ่อม": "=",
+            "สถานะ": "=",
+            "วันที่ของสถานะ": "=",
+            "เวลาของสถานะ": "=",
+            "SLA (OK/NOK)": "=",
+            "สาเหตุ": "=",
+            "วันที่": "=",
+            "เวลาที่หยุด, เลิกซ่อม": "=",
+            "เวลา": "=",
+            "วิธีแก้ไขเหตุเสีย": "=",
+            "ของดี/เลขSAP": "=",
+            "สาเหตุ Over SLA": "=",
+            "ของเสีย/เลขSAP": "=",
+            "CM report": "=",
+            "Admin Name": "=",
+            "Admin Verify Date": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.",
+              "displayName": "TT No. / PW No.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Serverity",
+              "displayName": "Serverity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม.)",
+              "displayName": "SLA/TM (หน่วย ชม.)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SLA/T",
+              "displayName": "SLA/T",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Destination",
+              "displayName": " Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันที่ Ticket เปิด",
+              "displayName": "วันที่ Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่เปิด Ticket",
+              "displayName": "เวลาที่เปิด Ticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลา Ticket เปิด",
+              "displayName": "วันและเวลา Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ชื่อ",
+              "displayName": "ชื่อ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ทีม",
+              "displayName": "ทีม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ขนาดทีม\n(จ.น.คน)",
+              "displayName": "ขนาดทีม\n(จ.น.คน)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่ออกเดินทาง",
+              "displayName": "วันที่ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาที่ออกเดินทาง",
+              "displayName": "เวลาที่ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลา ออกเดินทาง",
+              "displayName": "วันและเวลา ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "วันที่เริ่มซ่อม",
+              "displayName": "วันที่เริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาที่เริ่มซ่อม",
+              "displayName": "เวลาที่เริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลาเริ่มซ่อม",
+              "displayName": "วันและเวลาเริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "สถานะ",
+              "displayName": "สถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่ของสถานะ",
+              "displayName": "วันที่ของสถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาของสถานะ",
+              "displayName": "เวลาของสถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลาซ่อมเสร็จ",
+              "displayName": "วันและเวลาซ่อมเสร็จ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ",
+              "displayName": "สาเหตุ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่",
+              "displayName": "วันที่",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่หยุด, เลิกซ่อม",
+              "displayName": "เวลาที่หยุด, เลิกซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลา",
+              "displayName": "เวลา",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วิธีแก้ไขเหตุเสีย",
+              "displayName": "วิธีแก้ไขเหตุเสีย",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ Over SLA",
+              "displayName": "สาเหตุ Over SLA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของดี/เลขSAP",
+              "displayName": "ของดี/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของเสีย/เลขSAP",
+              "displayName": "ของเสีย/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        928,
+        304
+      ],
+      "id": "d1bd8e42-505e-4e61-a3b5-5586d08ec3c3",
+      "name": "Tools Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE23-02-2026"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const text = ($json.message?.text || '').toLowerCase().trim();\n\nlet mode = \"unknown\";\n\n// ตรวจ TT number\nif (/tt\\d+/i.test(text)) {\n  if (text.includes(\"เช็ค\") || text.includes(\"check\")) {\n    mode = \"query_ticket\";\n  } else {\n    mode = \"update_ticket\";\n  }\n}\n\n// สรุปวันนี้\nelse if (text.includes(\"วันนี้\")) {\n  mode = \"today_summary\";\n}\n\n// query site\nelse if (text.includes(\"site\")) {\n  mode = \"query_site\";\n}\n\n// คืนค่าแบบ merge กับ input เดิม (สำคัญมากสำหรับ production)\nreturn {\n  ...$json,\n  text,\n  mode,\n  replyToken: $json.replyToken,\n  userId: $json.source?.userId\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        -128
+      ],
+      "id": "42a76e62-0f1f-40b4-8572-8091bdb039a0",
+      "name": "Detect Mode"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f72d226e-bd76-4673-9541-7541e5d9de3c",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "=query_ticket",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "6ed8fff0-82fc-4aa2-94a8-f2d10fd80543",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "=today_summary",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "bce04745-a77c-46b2-821f-90ea49f098d4",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "query_site",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        48
+      ],
+      "id": "da10125e-7268-414e-ba51-c96cb51c6f70",
+      "name": "IF - Query Mode"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      ...$json,\n      userId: $items(\"Detect Mode\")[0].json.userId,\n      finalMessage:\n        $json.output ||\n        $json.response ||\n        $json.result ||\n        $json\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -128
+      ],
+      "id": "a169b4a5-c8fb-48fd-afbc-a21deb7cf5db",
+      "name": "Merge User"
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParse(raw) {\n  if (!raw) return null;\n\n  // ถ้าเป็น object อยู่แล้ว\n  if (typeof raw === \"object\") return raw;\n\n  if (typeof raw !== \"string\") return null;\n\n  try {\n    const cleaned = raw\n      .replace(/^```json\\s*/i, '')\n      .replace(/```$/i, '')\n      .trim();\n\n    return JSON.parse(cleaned);\n  } catch (e) {\n    return null;\n  }\n}\n\nconst parsed = safeParse($json.finalMessage);\n\nconst requiredKeys = [\n  \"ticket_no\",\n  \"severity\",\n  \"fault_date\",\n  \"expected_date\",\n  \"owner\",\n  \"go_time\",\n  \"start_time\",\n  \"done_time\",\n  \"status\"\n];\n\nif (!parsed) {\n  return [{\n    json: {\n      error: true,\n      message: \"❌ AI ส่ง JSON ไม่ถูกต้อง\"\n    }\n  }];\n}\n\n// ตรวจ key ครบไหม\nfor (const key of requiredKeys) {\n  if (!(key in parsed)) {\n    return [{\n      json: {\n        error: true,\n        message: \"❌ JSON structure ไม่ครบ\"\n      }\n    }];\n  }\n}\n\nreturn [{\n  json: parsed\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        -128
+      ],
+      "id": "02af16c9-4598-4776-b246-bb0e2fa6c82f",
+      "name": "Parse Final JSON"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 288,
+        "width": 608,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        704,
+        240
+      ],
+      "id": "0b47736b-3d6d-4f72-af6e-c3fb89916263",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "       ยังไม่เข้า node (ยังไม่ได้ใช้)",
+        "height": 80,
+        "width": 326,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        448
+      ],
+      "id": "80b25c79-9092-4770-9395-a415c5ee4ad4",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2097907540,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit#gid=2097907540"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Service",
+              "displayName": "Job Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "บริษัทรับเหมา",
+              "displayName": "บริษัทรับเหมา",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ออกเดินทาง (Go)",
+              "displayName": "ออกเดินทาง (Go)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เริ่มซ่อม (Start)",
+              "displayName": "เริ่มซ่อม (Start)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สถานะการซ่อม (Recovery)",
+              "displayName": "สถานะการซ่อม (Recovery)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Serial Number",
+              "displayName": "Serial Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        320
+      ],
+      "id": "e3289f0d-918a-486a-9dbb-2b2d7a19481b",
+      "name": "Get row(s) in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE23-02-2026"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2097907540,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit#gid=2097907540"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "วันที่ Ticket เปิด": "={{$json.open_ticket_date}}",
+            "Serverity": "={{$json.severity}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No.",
+              "displayName": "TT No.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Serverity",
+              "displayName": "Serverity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม.)",
+              "displayName": "SLA/TM (หน่วย ชม.)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA/T",
+              "displayName": "SLA/T",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": " Destination",
+              "displayName": " Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่ Ticket เปิด",
+              "displayName": "วันที่ Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่เปิด Ticket",
+              "displayName": "เวลาที่เปิด Ticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลา Ticket เปิด",
+              "displayName": "วันและเวลา Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ชื่อ",
+              "displayName": "ชื่อ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ทีม",
+              "displayName": "ทีม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ขนาดทีม\n(จ.น.คน)",
+              "displayName": "ขนาดทีม\n(จ.น.คน)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่",
+              "displayName": "วันที่",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลา",
+              "displayName": "เวลา",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลา ออกเดินทาง",
+              "displayName": "วันและเวลา ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลาเริ่มซ่อม",
+              "displayName": "วันและเวลาเริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สถานะ",
+              "displayName": "สถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลาซ่อมเสร็จ",
+              "displayName": "วันและเวลาซ่อมเสร็จ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ",
+              "displayName": "สาเหตุ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่หยุด, เลิกซ่อม",
+              "displayName": "เวลาที่หยุด, เลิกซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วิธีแก้ไขเหตุเสีย",
+              "displayName": "วิธีแก้ไขเหตุเสีย",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ Over SLA",
+              "displayName": "สาเหตุ Over SLA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของดี/เลขSAP",
+              "displayName": "ของดี/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของเสีย/เลขSAP",
+              "displayName": "ของเสีย/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No",
+              "displayName": "TT No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม",
+              "displayName": "SLA/TM (หน่วย ชม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "OpenTicketDate",
+              "displayName": "OpenTicketDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ExpectedDate",
+              "displayName": "ExpectedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "success",
+              "displayName": "success",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "response",
+              "displayName": "response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม)",
+              "displayName": "SLA/TM (หน่วย ชม)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "go_time",
+              "displayName": "go_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "done_time",
+              "displayName": "done_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1520,
+        -208
+      ],
+      "id": "eea83971-079f-4307-ac10-bc1c1b613ad8",
+      "name": "Append row in sheet",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE23-02-2026"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5babda58-81d0-4a73-8610-6a422d946b38",
+              "leftValue": "={{$json.ticket_no}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        -128
+      ],
+      "id": "9410f008-50cd-4580-982c-e6a944840674",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ $('Line Messaging Trigger').item.json.source.groupId || $('Line Messaging Trigger').item.json.source.userId }}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{\n`ข้อความของ ${$('Line Messaging Trigger').item.json.source.userId || \"ผู้แจ้งงาน\"} แจ้งว่า\n\n📌 Ticket: ${$json.ticket_no || '-'}\n⚡ Severity: ${\n  $json.severity === 'NSA1' ? '🚨🔴 NSA1' :\n  $json.severity === 'NSA2' ? '⚠️🟠 NSA2' :\n  $json.severity === 'NSA3' ? '⚡🟡 NSA3' :\n  $json.severity === 'NSA4' ? '🟢🔵 NSA4' :\n  '-'\n}\n\n📅 Fault: ${$json.fault_date || '-'}\n📆 Expected: ${$json.expected_date || '-'}\n📆 Open Ticket Date:  ${$json.openTicket_date || '-'}\n\n\n🚗 Go: ${$json.go_time || '-'}\n🔧 Start: ${$json.start_time || '-'}\n✅ Done: ${$json.done_time || '-'}\n📍 Status: ${$json.status || '-'}\n`\n}} "
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        2016,
+        -224
+      ],
+      "id": "7697a638-516b-42e8-8a1c-8c8cfb33e779",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "aJgZGG757I8itMKK",
+          "name": "Bot-SYS2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "798c952e-16d5-4a69-bc47-a354bbfc12cf",
+              "name": "TT No",
+              "value": "={{$json.ticket_no}}",
+              "type": "string"
+            },
+            {
+              "id": "52a5d7bd-9cd9-40a0-81d7-75aadaad18cf",
+              "name": "Severity",
+              "value": "={{ $json.severity }}",
+              "type": "string"
+            },
+            {
+              "id": "12152c67-4c01-47e0-897c-f0b89a5ff7da",
+              "name": "SLA/TM (หน่วย ชม)",
+              "value": "={{\n  $json.severity === 'NSA1' ? 4 :\n  $json.severity === 'NSA2' ? 8 :\n  $json.severity === 'NSA3' ? 14 :\n  $json.severity === 'NSA4' ? 24 :\n  0\n}}",
+              "type": "string"
+            },
+            {
+              "id": "0b0e29d4-e610-4fab-b6af-e408a94c1a98",
+              "name": "OpenTicketDate",
+              "value": "={{$json.fault_date}}",
+              "type": "string"
+            },
+            {
+              "id": "ae3a42a0-1b86-4048-9467-d64427660a44",
+              "name": "ExpectedDate",
+              "value": "={{\n  (() => {\n    const base = new Date($json.fault_date);\n    const addHours =\n      $json.severity === 'NSA1' ? 4 :\n      $json.severity === 'NSA2' ? 8 :\n      $json.severity === 'NSA3' ? 14 :\n      $json.severity === 'NSA4' ? 24 :\n      0;\n\n    const result = new Date(base.getTime() + addHours * 60 * 60 * 1000);\n\n    return result.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });\n  })()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "3c74b154-8314-4e96-befd-b185c03d0a7a",
+              "name": "owner",
+              "value": "={{ $json.owner }}",
+              "type": "string"
+            },
+            {
+              "id": "704cfe8b-2997-4868-a5cf-bb8a74312a85",
+              "name": "go_time",
+              "value": "={{ $json.go_time }}",
+              "type": "string"
+            },
+            {
+              "id": "c61c0ad9-8eb6-4e7b-9d42-6bfff8752335",
+              "name": "start_time",
+              "value": "={{ $json.start_time }}",
+              "type": "string"
+            },
+            {
+              "id": "a6168b76-77a9-4feb-b5b4-8945318971e7",
+              "name": "done_time",
+              "value": "={{ $json.done_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        -144
+      ],
+      "id": "61331a7a-6298-4fa1-9f5c-44522107a1ad",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "content": "บันทึกข้อมูล",
+        "height": 176,
+        "width": 166,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1488,
+        -240
+      ],
+      "typeVersion": 1,
+      "id": "c2d04c39-da30-41e1-974d-13127ca95817",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "jsCode": "function clean(value) {\n  if (\n    value === undefined ||\n    value === null ||\n    value === \"\" ||\n    value === \"-\" ||\n    value === \"null\"\n  ) {\n    return null;\n  }\n  return value;\n}\n\nreturn items.map(item => {\n\n  const data = item.json;\n\n  const go = clean(data[\"go_time\"]);\n  const start = clean(data[\"start_time\"]);\n  const done = clean(data[\"done_time\"]);\n\n  let status = null;\n\n  if (done) {\n    status = \"Done\";\n  } else if (start) {\n    status = \"In Progress\";\n  } else if (go) {\n    status = \"On Site\";\n  } else {\n    status = \"Open\";\n  }\n\n  return {\n    json: {\n      ticket_no: clean(data[\"TT No\"]),\n      severity: clean(data[\"Severity\"]),\n      openTicket_date: clean(data[\"OpenTicketDate\"]),\n      fault_date: clean(data[\"OpenTicketDate\"]), // ใช้ตัวนี้พอ\n      expected_date: clean(data[\"ExpectedDate\"]),\n      owner: clean(data[\"owner\"]),\n      go_time: go,\n      start_time: start,\n      done_time: done,\n      status: status\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        -224
+      ],
+      "id": "2757ce1c-787c-4127-9722-5c78f7a095fa",
+      "name": "Normalize Ticket Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(\"DEBUG DATA:\", $json);\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        -128
+      ],
+      "id": "1d63c63c-0584-417c-88f6-137707d2cc7d",
+      "name": "Code ViewError"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{ \n  $node[\"Line Messaging Trigger\"].json.source.groupId \n  || \n  $node[\"Line Messaging Trigger\"].json.source.userId \n}}",
+        "messages": {
+          "values": [
+            {
+              "text": "=⚠️ ระบบไม่สามารถบันทึก Ticket ได้\nกรุณาตรวจสอบแล้วส่งใหม่อีกครั้ง"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1552,
+        64
+      ],
+      "id": "cf5e5a3d-2bc7-48c6-97ce-8d6c2f59874b",
+      "name": "Line Messaging3",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "aJgZGG757I8itMKK",
+          "name": "Bot-SYS2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  if (!item.json.reply || item.json.reply.trim() === \"\") {\n    item.json.reply = \"ขออภัย ระบบไม่สามารถสร้างคำตอบได้ กรุณาลองใหม่อีกครั้ง\";\n  }\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        64
+      ],
+      "id": "574b196b-a10b-4fe5-83e1-8971915a8746",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "reply โดยอิง userId / GroupId",
+        "width": 246,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1984,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "83f50d75-0685-4fc4-a62e-064bb5f17eae",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "2️⃣ Detect Mode\nวิเคราะห์ว่าผู้ใช้ต้องการอะไร\nMode ที่เป็นไปได้\nupdate_ticket\nquery_ticket\ntoday_summary\nquery_site\nunknown",
+        "height": 176,
+        "width": 198
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -752,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "f08ac93a-7583-4a08-9cf3-0eed2de124cc",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "4️⃣ Parse JSON\nตรวจสอบว่า:\nJSON ถูกต้อง\nKey ครบ\nถ้าไม่ครบ → แจ้ง Error",
+        "height": 128,
+        "width": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -224,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "9e4b6720-3a23-4c9e-83cc-38a3ac1aa5f9",
+      "name": "Sticky Note15"
+    },
+    {
+      "parameters": {
+        "content": "6️⃣ บันทึก Google Sheet\n\nบันทึกข้อมูล Ticket ลง Sheet อัตโนมัติ",
+        "height": 240,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        208,
+        -528
+      ],
+      "typeVersion": 1,
+      "id": "aff9bf00-e111-41cd-8d25-da6643790ef8",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "ใช้ “เฉพาะกรณี” ที่ AI Agent ส่งค่าออกมาเป็น string เท่านั้น",
+        "height": 176,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        64,
+        -272
+      ],
+      "typeVersion": 1,
+      "id": "25cb4016-f821-498d-9cbe-d2e8c9684141",
+      "name": "Sticky Note16"
+    },
+    {
+      "parameters": {
+        "content": "เเจ้ง errror",
+        "width": 150,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1520,
+        32
+      ],
+      "typeVersion": 1,
+      "id": "ade5d5e1-ab63-4750-a836-b9ba73a0b1aa",
+      "name": "Sticky Note17"
+    },
+    {
+      "parameters": {
+        "content": "# 🚀 Ticket Automation Workflow\n\n## 1) LINE Trigger\n- รองรับ Private Chat และ Group\n- ใช้ userId / groupId อัตโนมัติ\n- Trigger เมื่อมี message event\n\n## 2) Mode Detection\n- ตรวจหา TT\\d+\n- แยกโหมด:\n  - update_ticket\n  - query_ticket\n  - today_summary\n  - query_site\n\n## 3) AI Parsing (Gemini)\n- แปลงข้อความเป็น Flat JSON เท่านั้น\n- ห้ามมี Markdown / ห้ามมี Text เกิน\n- คืนค่า null หากไม่พบข้อมูล\n- Regex ที่ใช้:\n  - TT\\d+\n  - NSA1–NSA4\n  - !Go#HH:mm\n  - !Star#HH:mm\n  - !Done#HH:mm\n\n## 4) JSON Validation\n- Parse string → JSON\n- ตรวจครบ 9 fields:\n  - ticket_no\n  - severity\n  - fault_date\n  - expected_date\n  - owner\n  - go_time\n  - start_time\n  - done_time\n  - status\n- ถ้าโครงสร้างผิด → ส่ง Error กลับ LINE\n\n## 5) SLA Calculation\n- NSA1 = 4 ชม.\n- NSA2 = 8 ชม.\n- NSA3 = 14 ชม.\n- NSA4 = 24 ชม.\n- คำนวณ ExpectedDate อัตโนมัติ (Asia/Bangkok)\n\n## 6) Auto Status Logic\n- done_time → Done\n- start_time → In Progress\n- go_time → On Site\n- ไม่มีเวลา → Open\n\n## 7) Google Sheets Integration\n- Append Row\n- Auto Retry เมื่อ Fail\n- ถ้า Error → แจ้งเตือนกลับ LINE\n\n## 8) LINE Summary Response\nแสดงผล:\n- Ticket No\n- Severity (พร้อม Emoji)\n- Fault Date\n- Expected Date\n- Go / Start / Done\n- Status",
+        "height": 1680,
+        "width": 960,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2400,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "b5db10f0-6969-44cf-ac75-79322dd7d155",
+      "name": "Sticky Note18"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node[\"Line Messaging Trigger\"].json.source.groupId || $node[\"Line Messaging Trigger\"].json.source.userId}}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "=    {\n      \"text\": \"⚠️ ระบบบันทึกข้อมูลมีปัญหาชั่วคราว กรุณาลองใหม่อีกครั้ง\"\n    }\n  ]\n}",
+              "text": "⚠️ ระบบไม่สามารถบันทึก Ticket ได้\n\nสาเหตุ:\n{{$json.message || \"ข้อมูลไม่ถูกต้อง\"}}\n\nกรุณาตรวจสอบรูปแบบข้อความอีกครั้ง"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1696,
+        -80
+      ],
+      "id": "3320e5be-33c8-4ab7-847b-1edb23522487",
+      "name": "Line Messaging SendError",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "T6r34cSYwbockIDL",
+          "name": "SYS-Report1"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging Trigger": {
+      "main": [
+        [
+          {
+            "node": "Detect Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "Tools Sheet": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Detect Mode": {
+      "main": [
+        [
+          {
+            "node": "Code ViewError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Query Mode": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Merge User": {
+      "main": [
+        [
+          {
+            "node": "Parse Final JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Final JSON": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in Google Sheets": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Normalize Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Line Messaging SendError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Ticket Data": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code ViewError": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging3": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "dynamic",
+    "timezone": "Asia/Bangkok",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 20
+  },
+  "versionId": "d2c835df-7d55-4057-b6c7-0b69fd7345ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05944909a8ccb3ffdf59c45978efdd311c90ab3658ab8e0fd81f135870dfea78"
+  },
+  "id": "eBWvIYsLeHOdknvh",
+  "tags": []
+}
