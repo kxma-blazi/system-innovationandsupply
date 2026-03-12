@@ -1,4 +1,4 @@
-# 📡 LineBot-SYS2 — Telecom Ticket Close Job Automation (n8n Workflow)
+# 📡 LineBot-SYS2 — Telecom Ticket Close Job Automation (n8n Workflow) & Google App Script
 
 ระบบอัตโนมัติสำหรับรับรายงาน **ปิดงาน (Close Job)** จากช่างซ่อมบำรุงผ่าน LINE OA  
 รองรับทั้ง **ข้อความ (Text)** และ **รูปภาพ (Image)** → บันทึกลง Google Sheets → ส่งสรุปกลับ LINE
