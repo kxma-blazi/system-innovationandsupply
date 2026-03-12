@@ -1,0 +1,536 @@
+// =============================
+// CONFIG : WEBHOOK_URL : https://script.google.com/macros/s/AKfycbxIK3Rk9E-xL9ZsuECEx9ts3x3Mgs0wboempjpIlm6P-j-y8dTPA6zkq-DLsDrSzup9/exec
+// =============================
+const TELEGRAM_TOKEN = '8723789342:AAG03C-zmaUoDplhtArWm5H7AI0qXi3pKCg';
+const CHAT_ID = '-1003731290917'; // -100 : super Group
+
+const SPREADSHEET_ID = "1MyAWKuCtmBclqVWALUEhEZjF7jKLMHs2sqL5oXjhA0w"; // ใส่ SpreadSheet_ID ตย"https://docs.google.com/spreadsheets/d/THIS_IS_ID/edit"
+const SHEET_NAME = 'STOCK';// ประกาศตัวเเปรเเบบไม่ใช้obj. 
+
+const LOW_STOCK_LIMIT = 5;
+const VERSION = "1.0.0"; 
+
+function doPost(e) {
+
+  let chatId = CHAT_ID;
+
+  try {
+
+    if (!e || !e.postData) {
+      return ContentService.createTextOutput("No PostData");
+    }
+
+    const data = JSON.parse(e.postData.contents);
+    const msg = data.message || data.edited_message;
+
+    if (!msg) return ContentService.createTextOutput("OK");
+
+    chatId = msg.chat.id;
+    const text = msg.text;
+
+    if (!text) return ContentService.createTextOutput("OK");
+
+    if (!text.startsWith("/")) return ContentService.createTextOutput("OK");
+
+    if (text.length > 100) return ContentService.createTextOutput("OK");
+
+    const cmd = text.split(" ");
+    cmd[0] = cmd[0].split("@")[0];
+
+    // =========================
+    // COMMAND SWITCH
+    // =========================
+    switch (cmd[0]) {
+
+      case "/help":
+        sendTelegram(chatId, helpMenu());
+        break;
+
+      case "/status":
+        sendTelegram(chatId, botStatus());
+        break;
+
+      case "/version":
+        sendTelegram(chatId, botVersion());
+        break;
+
+      case "/stock":
+
+        if (!cmd[1]) {
+          sendTelegram(chatId,"❗ Usage: /stock CODE");
+          break;
+        }
+
+        sendTelegram(chatId, searchStock(cmd[1]));
+        break;
+
+      case "/search":
+
+        if (!cmd[1]) {
+          sendTelegram(chatId,"❗ Usage: /search KEYWORD");
+          break;
+        }
+
+        const keyword = cmd.slice(1).join(" ");
+        sendTelegram(chatId, searchKeyword(keyword));
+        break;
+
+      case "/allstock":
+        sendTelegram(chatId, allStock());
+        break;
+
+      case "/lowstock":
+        sendTelegram(chatId, lowStock());
+        break;
+
+      case "/report":
+        sendTelegram(chatId, stockReport());
+        break;
+
+      case "/dp-sko":
+        sendTelegram(chatId, locationStock(7,"DP-SKO"));
+        break;
+
+      case "/dp-ryg":
+        sendTelegram(chatId, locationStock(8,"DP-RYG"));
+        break;
+
+      case "/dp-trt":
+        sendTelegram(chatId, locationStock(9,"DP-TRT"));
+        break;
+
+      case "/restock":
+
+        if (!cmd[1] || !cmd[2]) {
+          sendTelegram(chatId,"❗ Usage: /restock CODE AMOUNT");
+          break;
+        }
+
+        sendTelegram(chatId, restock(cmd[1],cmd[2]));
+        break;
+
+      case "/add":
+
+        if (cmd.length < 4) {
+          sendTelegram(chatId,"❗ Usage: /add CODE DESC QTY");
+          break;
+        }
+
+        const code = cmd[1];
+        const qty = cmd.pop();
+        const desc = cmd.slice(2).join(" ");
+
+        sendTelegram(chatId, addItem(code,desc,qty));
+        break;
+
+      default:
+        sendTelegram(chatId,"❗ Unknown command\nType /help");
+
+    }
+
+  } catch(err) {
+
+    Logger.log(err);
+    sendTelegram(chatId, `⚠️ BOT ERROR\n\n${err}`);
+
+  }
+
+  return ContentService.createTextOutput("OK");
+
+}
+
+// ============================================
+// CORE : GET SHEET
+// ============================================
+function getSheet() {
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) throw new Error("Sheet not found");
+
+  return sheet;
+
+}
+// ============================================
+// TELEGRAM : SEND MESSAGE
+// ============================================
+function sendTelegram(chatId, message) {
+
+  if (!message) return;
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+
+  const payload = {
+    chat_id: chatId,
+    text: message,
+    parse_mode: "HTML"
+  };
+
+  UrlFetchApp.fetch(url,{
+    method:"post",
+    contentType:"application/json",
+    payload:JSON.stringify(payload)
+  });
+
+}
+
+// ============================================
+// STOCK REPORT
+// ============================================
+function stockReport() {
+
+  const data = getSheet().getDataRange().getValues();
+
+  let total = data.length - 1;
+  let low = 0;
+  let out = 0;
+
+  for (let i = 1; i < data.length; i++) {
+
+    const qty = Number(data[i][4]);
+
+    if (qty <= LOW_STOCK_LIMIT) low++;
+    if (qty === 0) out++;
+
+  }
+
+  return `📊 <b>STOCK REPORT</b>
+
+Total : ${total}
+Low : ${low}
+Out : ${out}`;
+
+}
+
+// ============================================
+// ALL STOCK
+// ============================================
+function allStock() {
+
+  const data = getSheet().getDataRange().getValues();
+
+  let msg = "📦 <b>ALL STOCK</b>\n\n";
+
+  for (let i = 1; i < data.length; i++) {
+
+    msg += `${data[i][1]} | ${data[i][2]} | ${data[i][4]}\n`;
+
+  }
+
+  return msg;
+
+}
+
+// ============================================
+// LOCATION STOCK
+// ============================================
+function locationStock(col, name) {
+
+  const data = getSheet().getDataRange().getValues();
+
+  let msg = `📍 <b>${name} STOCK</b>\n\n`;
+
+  for (let i = 1; i < data.length; i++) {
+
+    const qty = Number(data[i][col]);
+
+    if (qty > 0) {
+
+      msg += `${data[i][1]} | ${data[i][2]} | ${qty}\n`;
+
+    }
+
+  }
+
+  return msg;
+
+}
+
+// ============================================
+// RESTOCK
+// ============================================
+function restock(code, amount) {
+
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+
+  amount = Number(amount);
+
+for (let i = 1; i < data.length; i++) {
+
+  if (data[i][1] == code) {
+
+    const current = Number(data[i][4]);
+    const newQty = current + amount;
+
+    sheet.getRange(i + 1, 5).setValue(newQty);
+
+    return `✅ <b>RESTOCK SUCCESS</b>
+
+Code : ${code}
+Added : ${amount}
+New QTY : ${newQty}`;
+
+  }
+
+}
+
+  return "❌ Item not found";
+
+}
+
+// ============================================
+// ADD ITEM
+// ============================================
+function addItem(code, desc, qty) {
+
+  const sheet = getSheet();
+
+  sheet.appendRow([
+    "",
+    code,
+    desc,
+    "",
+    Number(qty),
+    0,
+    0,
+    0,
+    0,
+    0
+  ]);
+
+  return `✅ <b>ITEM ADDED</b>
+
+Code : ${code}
+Desc : ${desc}
+QTY : ${qty}`;
+
+}
+
+// ============================================
+// MENU
+// ============================================
+function helpMenu() {
+
+  return `📦 <b>STOCK MANAGEMENT BOT</b>
+
+━━━━━━━━━━━━━━
+🔎 INVENTORY
+
+/stock CODE
+/search KEYWORD
+/allstock
+/lowstock
+
+━━━━━━━━━━━━━━
+📍 LOCATIONS
+
+/dp-sko
+/dp-ryg
+/dp-trt
+
+━━━━━━━━━━━━━━
+📊 REPORT
+
+/report
+
+━━━━━━━━━━━━━━
+🛠 MANAGEMENT
+
+/restock CODE AMOUNT
+/add CODE DESC QTY
+
+━━━━━━━━━━━━━━
+⚙️ SYSTEM
+
+/status
+/version`;
+
+}
+
+// ============================================
+// BOT STATUS
+// ============================================
+function botStatus() {
+
+  return `🟢 <b>BOT STATUS</b>
+
+System : ONLINE
+Sheet : ${SHEET_NAME}
+
+Version : ${VERSION}`;
+
+}
+
+// ============================================
+// BOT VERSION
+// ============================================
+function botVersion() {
+
+  return `🧠 <b>BOT VERSION</b>
+
+Stock Management Bot
+Version : ${VERSION}
+
+Platform
+Google Apps Script
+Telegram Bot API`;
+
+}
+
+// ============================================
+// SEARCH STOCK
+// ============================================
+function searchStock(code) {
+
+  const data = getSheet().getDataRange().getValues();
+
+  for (let i = 1; i < data.length; i++) {
+
+    if (data[i][1] == code) {
+
+      return `📦 <b>Stock Result</b>
+
+Code : ${data[i][1]}
+Desc : ${data[i][2]}
+
+QTY : ${data[i][4]}
+
+CBR : ${data[i][5]}
+CCS : ${data[i][6]}
+SKO : ${data[i][7]}
+RYG : ${data[i][8]}
+TRT : ${data[i][9]}`;
+
+    }
+
+  }
+
+  return "❌ Item not found";
+
+}
+
+// ============================================
+// SEARCH KEYWORD
+// ============================================
+function searchKeyword(keyword) {
+
+  const data = getSheet().getDataRange().getValues();
+
+  let msg = "🔎 <b>SEARCH RESULT</b>\n\n";
+  let found = false;
+
+  for (let i = 1; i < data.length; i++) {
+
+    if (data[i][2].toLowerCase().includes(keyword.toLowerCase())) {
+
+      found = true;
+      msg += `${data[i][1]} | ${data[i][2]} | ${data[i][4]}\n`;
+
+    }
+
+  }
+
+  if (!found) return "❌ No item found";
+
+  return msg;
+
+}
+
+// ============================================
+// LOW STOCK
+// ============================================
+function lowStock() {
+
+  const data = getSheet().getDataRange().getValues();
+
+  let msg = "📉 <b>LOW STOCK</b>\n\n";
+  let found = false;
+
+  for (let i = 1; i < data.length; i++) {
+
+    if (Number(data[i][4]) <= LOW_STOCK_LIMIT) {
+
+      found = true;
+      msg += `${data[i][1]} | ${data[i][2]} | ${data[i][4]}\n`;
+
+    }
+
+  }
+
+  if (!found) return "✅ No low stock items";
+
+  return msg;
+
+}
+
+// ============================================
+// LOW STOCK ALERT
+// ============================================
+function checkLowStock() {
+
+  const sheet = getSheet();
+  const data = sheet.getDataRange().getValues();
+
+  let msg = "⚠️ <b>LOW STOCK ALERT</b>\n\n";
+  let found = false;
+
+  for (let i = 1; i < data.length; i++) {
+
+    const code = data[i][1];
+    const desc = data[i][2];
+    const qty = Number(data[i][4]);
+
+    if (qty <= LOW_STOCK_LIMIT) {
+
+      found = true;
+
+      msg += `${code} | ${desc} | ${qty}\n`;
+
+    }
+
+  }
+
+  if (found) {
+
+    sendTelegram(CHAT_ID, msg);
+
+  }
+
+}
+
+
+// ============================================
+// AUTO LOW STOCK ALERT (TRIGGER WHEN EDIT)
+// ============================================
+function onEdit(e) {
+
+  const sheet = e.range.getSheet();
+
+  if (sheet.getName() !== SHEET_NAME) return;
+
+  const row = e.range.getRow();
+  const col = e.range.getColumn();
+
+  // ตรวจเฉพาะ column QTY
+  if (col !== 5 || row === 1) return;
+
+  const qty = Number(e.range.getValue());
+
+  if (qty <= LOW_STOCK_LIMIT) {
+
+    const code = sheet.getRange(row,2).getValue();
+    const desc = sheet.getRange(row,3).getValue();
+
+    const msg = `⚠️ <b>LOW STOCK ALERT</b>
+
+Code : ${code}
+Desc : ${desc}
+QTY : ${qty}`;
+
+    sendTelegram(CHAT_ID,msg);
+
+  }
+
+}
