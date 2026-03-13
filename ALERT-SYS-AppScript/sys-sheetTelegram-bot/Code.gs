@@ -4,7 +4,7 @@
 const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
 const CHAT_ID = "-1003731290917"; 
 const LOW_STOCK_LIMIT = 1;
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyOUBt4Fze-BIMChrOB_tBVm4MoFcsOzmTAGf3YO8GKgTD2joIlr7CXwX6AS-LAaoAs/exec";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyR3KwNBJLTsbHbdM0N3u-ZP5IIDZuXPZ66v6myI2QPVEuQQGIL2r2WWe8UeCMzbspP/exec"; // UPDATE ด้วยหลังอัพโค้ด
 
 // ============================================================
 // 2. CORE SYSTEM (แก้ไข doPost ให้ส่งชื่อผู้ใช้งาน)
@@ -27,7 +27,14 @@ function doPost(e) {
     const cmd = args[0].toLowerCase();
 
     switch(cmd) {
+      case "/start": sendTelegram(chatId, startMessage()); break;
       case "/help": sendTelegram(chatId, helpMenu()); break;
+
+      case "/history": sendTelegram(chatId, history()); break;
+      
+      case "/menu": sendTelegram(chatId, menuMessage()); break;
+      case "/manual": sendTelegram(chatId, helpMenu()); break;
+
       case "/stock": sendTelegram(chatId, getStock(args[1])); break;
       case "/search": sendTelegram(chatId, searchStock(args.slice(1).join(" "))); break;
       case "/allstock": sendTelegram(chatId, allStock()); break;
@@ -190,11 +197,124 @@ function notifyActivity(title, code, type, qty, remain, dept = "", user = "") {
 }
 
 function helpMenu() {
-  return `📦 <b>STOCK BOT MENU</b>\n━━━━━━━━━━━━━━━\n🔎 /stock [Code]\n🔍 /search [Text]\n📦 /allstock\n⚠️ /lowstock\n📊 /report\n\n📥 <b>เติม:</b> /restock [Code] [Qty]\n📤 <b>เบิก:</b> /dp-[dept] [Code] [Qty]\n(cbr, ccs, sko, ryg, trt)`;
+
+return `📦 <b>Warehouse Management System</b>
+Stock Control Bot
+
+📚 <b>User Manual</b>
+━━━━━━━━━━━━━━━
+
+🔎 <b>ตรวจสอบสินค้า</b>
+/stock CODE
+
+🔍 <b>ค้นหาสินค้า</b>
+/search KEYWORD
+
+📦 <b>ดู Stock ทั้งหมด</b>
+/allstock
+
+⚠️ <b>สินค้าใกล้หมด</b>
+/lowstock
+
+📊 <b>รายงานระบบ</b>
+/report
+
+━━━━━━━━━━━━━━━
+📥 <b>เติมสินค้า</b>
+/restock CODE QTY
+
+📤 <b>เบิกสินค้า</b>
+/dp-cbr CODE QTY
+/dp-ccs CODE QTY
+/dp-sko CODE QTY
+/dp-ryg CODE QTY
+/dp-trt CODE QTY
+
+━━━━━━━━━━━━━━━
+🤖 STOCK BOT SYSTEM
+`;
+
 }
 
 function setWebhook() {
   const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/setWebhook?url=${WEB_APP_URL}`;
   const response = UrlFetchApp.fetch(url);
   Logger.log("ผลการตั้งค่า: " + response.getContentText());
+}
+
+function startMessage(){
+
+return `👋 <b>Welcome to STOCK BOT</b>
+
+📦 ระบบจัดการคลังสินค้า
+Warehouse Management System
+
+พิมพ์ /menu เพื่อดูเมนูหลัก
+พิมพ์ /help เพื่อดูคำสั่งทั้งหมด`;
+
+}
+
+function menuMessage(){
+
+return `📦 <b>STOCK BOT MENU</b>
+
+1️⃣ ตรวจสอบสินค้า
+/stock CODE
+
+2️⃣ ค้นหาสินค้า
+/search KEYWORD
+
+3️⃣ ดู Stock ทั้งหมด
+/allstock
+
+4️⃣ สินค้าใกล้หมด
+/lowstock
+
+5️⃣ รายงานระบบ
+/report
+
+6️⃣ เติมสินค้า
+/restock CODE QTY
+
+7️⃣ เบิกสินค้า
+/dp-cbr CODE QTY
+/dp-ccs CODE QTY
+/dp-sko CODE QTY
+/dp-ryg CODE QTY
+/dp-trt CODE QTY
+
+📚 /manual คู่มือใช้งาน
+`;
+
+}
+
+function history(){
+
+const ss = SpreadsheetApp.getActiveSpreadsheet();
+const sheet = ss.getSheetByName("LOGS");
+
+if(!sheet) return "❌ ไม่พบชีต LOGS";
+
+const data = sheet.getDataRange().getValues();
+
+let msg = "📜 <b>Stock History</b>\n\n";
+
+let start = Math.max(1, data.length - 10);
+
+for(let i=start; i<data.length; i++){
+
+let date = Utilities.formatDate(new Date(data[i][0]), Session.getScriptTimeZone(), "dd/MM HH:mm");
+
+msg += `🕒 ${date}
+👤 ${data[i][1]}
+📦 ${data[i][2]} ${data[i][3]}
+🔢 ${data[i][4]}
+📊 เหลือ ${data[i][6]}
+
+`;
+
+}
+
+return msg;
+
 }
