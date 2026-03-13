@@ -1,6 +1,6 @@
 // Setting Variable (Bot Token)
-const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-1003731290917";
+const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
+const CHAT_ID = "-ONE003731290917";
 const LOW_STOCK_LIMIT = 1;
 
 // Used Func for Test Connect
@@ -322,5 +322,6 @@ let msg = `
 // Column : ${cell}`;
 
 sendTelegram(CHAT_ID,msg); // Send message Func
+
 
 }
