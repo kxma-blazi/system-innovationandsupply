@@ -1,0 +1,4988 @@
+{
+  "name": "LineBot-SYS2/UPTODATEPromax copy checkpoints",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "SYSTEM ROLE\n\nYou are a deterministic Telecom Ticket Parsing Engine.\n\nYour job is to extract structured ticket data from technician LINE reports.\n\nMessages may contain Thai/English mixed text, timeline logs, ticket system fields, GPS coordinates, and technician explanations.\n\nYou MUST extract every field if the information exists anywhere in the message.\n\n━━━━━━━━━━━━━━━━━━━\nOUTPUT CONTRACT\n━━━━━━━━━━━━━━━━━━━\n\nReturn exactly ONE JSON object.\n\nRules:\n\n• Output JSON only\n• No markdown\n• No explanation\n• Do not rename keys\n• Do not add extra keys\n• Always include ALL keys\n• Trim whitespace\n\nIf a value truly does not exist return \"\".\n\nIf the value exists anywhere in the message you MUST extract it.\n\n━━━━━━━━━━━━━━━━━━━\nREQUIRED JSON STRUCTURE\n━━━━━━━━━━━━━━━━━━━\n\n{\n\"ticket_no\": \"\",\n\"severity\": \"\",\n\"fault_date\": \"\",\n\"expected_date\": \"\",\n\"owner\": \"\",\n\"go_time\": \"\",\n\"start_time\": \"\",\n\"done_time\": \"\",\n\"status\": \"\",\n\"timeline\": \"\",\n\"location\": \"\"\n}\n\n━━━━━━━━━━━━━━━━━━━\nTICKET DETECTION\n━━━━━━━━━━━━━━━━━━━\n\nDetect pattern:\n\nTT followed by digits\n\nExample:\n\nTT202603109720\n\n━━━━━━━━━━━━━━━━━━━\nSEVERITY DETECTION\n━━━━━━━━━━━━━━━━━━━\n\nDetect keywords:\n\nSeverity\nSA1\nSA2\nSA3\nSA4\n\nExamples:\n\nSeverity : SA1\nSeverity : SA2\n\nNormalize:\n\nSA1 → NSA1\nSA2 → NSA2\nSA3 → NSA3\nSA4 → NSA4\n\n━━━━━━━━━━━━━━━━━━━\nFAULT DATE\n━━━━━━━━━━━━━━━━━━━\n\nDetect patterns such as:\n\nFault Date:\nFault:\nวันที่เสีย\nวันที่แจ้งเสีย\n\nExamples:\n\nFault Date : 2026-03-10\nวันที่เสีย 10/03/2026\n\nExtract the date value.\n\n━━━━━━━━━━━━━━━━━━━\nEXPECTED DATE\n━━━━━━━━━━━━━━━━━━━\n\nDetect patterns such as:\n\nExpected\nExpected Date\nกำหนดแก้\nกำหนดเสร็จ\n\nExamples:\n\nExpected Date : 2026-03-10\nกำหนดแก้ 10/03/2026\n\n━━━━━━━━━━━━━━━━━━━\nOWNER DETECTION\n━━━━━━━━━━━━━━━━━━━\n\nDetect patterns:\n\nOwner:\nEngineer:\nTechnician:\nช่าง\nผู้รับผิดชอบ\n\nExample:\n\nOwner : Somchai\nTechnician : Anan\n\nExtract the name.\n\n━━━━━━━━━━━━━━━━━━━\nTIME EXTRACTION\n━━━━━━━━━━━━━━━━━━━\n\nRecognize time format:\n\nHH:mm\n\nExample timeline:\n\n16:45 รับงานเดินทาง\n17:37 ถึงหน้างาน\n19:54 ปลดหลูบ\n20:00 ตัดต่อเสร็จ\n\nRules:\n\nfirst detected time → go_time\n\narrival keywords:\nถึงหน้างาน\nถึงไซต์\nถึงจุด\n\n→ start_time\n\nlast detected time → done_time\n\n━━━━━━━━━━━━━━━━━━━\nTIMELINE BUILDING\n━━━━━━━━━━━━━━━━━━━\n\nCombine timeline entries into a single line.\n\nFormat:\n\ntime + activity\n\nSeparate entries using:\n\n\" | \"\n\n━━━━━━━━━━━━━━━━━━━\nSTATUS DETECTION\n━━━━━━━━━━━━━━━━━━━\n\nIf message contains:\n\nclear\nเคลียร์\nclose\nปิดงาน\nงานเสร็จ\n\nThen:\n\nstatus = \"Close\"\n\n━━━━━━━━━━━━━━━━━━━\nLOCATION DETECTION\n━━━━━━━━━━━━━━━━━━━\n\nDetect GPS formats:\n\n12.7347 102.1709\n12.7347,102.1709\nGPS: 12.7347 102.1709\n\nNormalize to:\n\n12.7347,102.1709\n\n━━━━━━━━━━━━━━━━━━━\nFINAL RULE\n━━━━━━━━━━━━━━━━━━━\n\nIf the message contains a value for a field you MUST extract it.\n\nReturn JSON only.",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        64
+      ],
+      "id": "62103a7e-e8f6-4f01-90f4-046909e21a16",
+      "name": "AI Agent",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Line Messaging Trigger').item.json.source.userId }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        480,
+        288
+      ],
+      "id": "3d0d8ef5-4aa9-4c63-bce8-f196091af677",
+      "name": "Simple Memory",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "events": [
+          "message"
+        ]
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3568,
+        -992
+      ],
+      "id": "df50afee-c7d4-4044-84ff-7eb7f0f2b78f",
+      "name": "Line Messaging Trigger",
+      "webhookId": "ad1be466-fa74-4964-b291-ef13d30e11fe",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "T6r34cSYwbockIDL",
+          "name": "SYS-Report1"
+        }
+      },
+      "disabled": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "modelName": "=models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        384,
+        256
+      ],
+      "id": "d6f2abe6-c073-4baa-acc1-a24428febbc8",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WuOAgQNbBp0HiPws",
+          "name": "Google Gemini(PaLM) - UPDATE23-02-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  let data = item.json;\n\n  // ถ้า AI ส่งมาเป็น string ให้ parse\n  if (typeof data === \"string\") {\n    data = JSON.parse(data);\n  }\n\n  // ถ้าอยู่ใน key ชื่อ output\n  if (typeof data.output === \"string\") {\n    data = JSON.parse(data.output);\n  }\n\n  return {\n    json: data\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -976
+      ],
+      "id": "ac00f3c1-48da-49f8-8791-40fc1d337df6",
+      "name": "Code in JavaScript1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "1️⃣ Line Messaging Trigger\nรับข้อความจาก LINE OA\ntext\nreplyToken\nuserId",
+        "height": 176,
+        "width": 214
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1072,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "c8c86ef0-6c63-4de6-9938-c7ce5960b1be",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "3️⃣ AI Agent\nแปลงข้อความธรรมดา → JSON โครงสร้างมาตรฐาน\nField ที่ต้องได้:\nticket_no\n\nseverity\nfault_date\nexpected_date\nowner\ngo_time\nstart_time\ndone_time\nstatus",
+        "height": 240,
+        "width": 512
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -656,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "d2cbf151-0a99-4527-8e07-2de4d35b6189",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "5️⃣ คำนวณ SLA\nSeverity   |    SLA\nNSA1\t |  4 ชั่วโมง\nNSA2\t |  8 ชั่วโมง\nNSA3\t | 14 ชั่วโมง\nNSA4\t | 24 ชั่วโมง\n\nExpected Date = fault_date + SLA\nTimeZone: Asia/Bangkok",
+        "height": 240,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "3ff01df3-3085-471b-b310-50ca7b75936d",
+      "name": "Sticky Note2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "7️⃣ สร้าง Status อัตโนมัติ\nมี done_time → Done\nมี start_time → In Progress\nมี go_time → On Site\nไม่มีเลย → Open",
+        "height": 240,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        352,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "ab00cece-c3ea-4598-a76a-7458d39a5d0d",
+      "name": "Sticky Note4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "8️⃣ ส่งข้อความกลับ LINE\n\nตัวอย่างผลลัพธ์:\n📌 Ticket: TT12345\n⚡ Severity: 🚨 NSA1\n📅 Fault: 28/12/2025 23:45\n📆 Expected: 29/12/2025 03:45\n🚗 Go: -\n🔧 Start: -\n✅ Done: -\n...\n📍 Status: Open",
+        "height": 224,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        560,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "f14c6994-4aab-47d8-9504-a04a8327a56f",
+      "name": "Sticky Note5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "IF Node\nหน้าที่:\nตรวจสอบว่ามีข้อมูลครบหรือไม่\nเช่น:\nticket_no ไม่ว่าง\nstatus ไม่ว่าง\nถ้าผ่าน → ส่ง LINE\nถ้าไม่ผ่าน → อาจส่งข้อความ error",
+        "height": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1136,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "430d6a54-5a78-4281-b990-f7c46509af07",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging (Send)\nหน้าที่:\nส่งข้อความกลับไปยัง user ผ่าน LINE\nใช้:\nuserId จาก Trigger\nmessage text จาก Code node ก่อนหน้า",
+        "height": 176,
+        "width": 272
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1376,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "2671daec-cc48-4277-bdf5-bb7fdb16f9d1",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "ภาพรวม\n────────────────────────────\n📌 LINE Ticket Automation Workflow\n1️⃣ Line Messaging Trigger\nรับข้อความจาก LINE OA\ntext\nuserId\nreplyToken\n⬇\n\n2️⃣ Detect Mode (Code)\nวิเคราะห์ข้อความว่าเป็นโหมดอะไร\nMode ที่เป็นไปได้:\nupdate_ticket\nquery_ticket\ntoday_summary\nquery_site\nunknown\n\n⬇\n\n3️⃣ IF – แยกเส้นทาง\nตรวจสอบ mode\nถ้าเป็น query → ไป AI Agent\nถ้าเป็น update_ticket → ไปขั้นตอนสร้าง/บันทึก Ticket\n⬇\n\n4️⃣ AI Agent\nวิเคราะห์ข้อความ\nแปลงเป็น JSON โครงสร้างมาตรฐาน\nField ที่ต้องได้:\nticket_no\nseverity\nfault_date\nexpected_date\nowner\ngo_time\nstart_time\ndone_time\nstatus\n⬇\n\n5️⃣ Parse JSON\nตรวจสอบว่า JSON ถูกต้อง\nParse ได้\nKey ครบ\nถ้าไม่ครบ → Error\n⬇\n\n6️⃣ คำนวณ SLA (Edit Fields)\nSeverity → SLA ชั่วโมง\nNSA1 = 4 ชม\nNSA2 = 8 ชม\nNSA3 = 14 ชม\nNSA4 = 24 ชม\nExpected Date = fault_date + SLA\nTimeZone: Asia/Bangkok\n\n⬇\n\n7️⃣ Append Google Sheet\nบันทึกข้อมูล Ticket ลง Google Sheet\n⬇\n\n8️⃣ Normalize Ticket Data\nทำความสะอาดข้อมูล\nสร้าง Status อัตโนมัติ\nStatus Logic:\nมี done_time → Done\nมี start_time → In Progress\nมี go_time → On Site\nไม่มีเลย → Open\n\n⬇\n\n9️⃣ IF ตรวจข้อมูลก่อนส่ง\nเช็คว่า ticket_no ไม่ว่าง\nถ้าผ่าน → ส่ง LINE\nถ้าไม่ผ่าน → ส่งข้อความ error\n\n⬇\n\n🔟 Line Messaging (Send)\nส่งข้อความสรุปกลับไปยังผู้ใช้\n\n────────────────────────────\n✅ Result\nUser ส่งข้อความ → ระบบสร้าง Ticket → คำนวณ SLA → บันทึก → ส่งสรุปกลับอัตโนมัติ\n────────────────────────────",
+        "height": 1696,
+        "width": 832
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -2400
+      ],
+      "typeVersion": 1,
+      "id": "c3ed5279-253d-4184-bce7-dd836257c538",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "Line Messaging ใช้ Webhook Production \nได้เเล้ว (บอททำงาน 24hrs)",
+        "height": 80,
+        "width": 304
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3936,
+        -1008
+      ],
+      "typeVersion": 1,
+      "id": "caddfc0f-a034-4db3-b556-c9ac09a4bfed",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y",
+          "mode": "list",
+          "cachedResultName": "Realสำเนาของ LAB งานลงระบบ NodeB2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1430076532,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1sjN3thWlP_a1qGjft7MuLglHbT4P9RSx0QGgqKHiT5Y/edit#gid=1430076532"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Region": "=",
+            "TT No. / PW No.": "=",
+            "Source": "=",
+            "TT : ที่เคลียร์โดยไม่ต้องซ่อม": "=",
+            " Destination": "=",
+            "วันที่ Ticket เปิด": "=",
+            "เวลาที่เปิด Ticket": "=",
+            "ทีม": "=",
+            "ขนาดทีม\n(จ.น.คน)": "=",
+            "วันที่ออกเดินทาง": "=",
+            "เวลาที่ออกเดินทาง": "=",
+            "วันที่เริ่มซ่อม": "=",
+            "เวลาที่เริ่มซ่อม": "=",
+            "สถานะ": "=",
+            "วันที่ของสถานะ": "=",
+            "เวลาของสถานะ": "=",
+            "SLA (OK/NOK)": "=",
+            "สาเหตุ": "=",
+            "วันที่": "=",
+            "เวลาที่หยุด, เลิกซ่อม": "=",
+            "เวลา": "=",
+            "วิธีแก้ไขเหตุเสีย": "=",
+            "ของดี/เลขSAP": "=",
+            "สาเหตุ Over SLA": "=",
+            "ของเสีย/เลขSAP": "=",
+            "CM report": "=",
+            "Admin Name": "=",
+            "Admin Verify Date": "="
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.",
+              "displayName": "TT No. / PW No.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Serverity",
+              "displayName": "Serverity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม.)",
+              "displayName": "SLA/TM (หน่วย ชม.)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SLA/T",
+              "displayName": "SLA/T",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "TT : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": " Destination",
+              "displayName": " Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันที่ Ticket เปิด",
+              "displayName": "วันที่ Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่เปิด Ticket",
+              "displayName": "เวลาที่เปิด Ticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันและเวลา Ticket เปิด",
+              "displayName": "วันและเวลา Ticket เปิด",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ชื่อ",
+              "displayName": "ชื่อ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ทีม",
+              "displayName": "ทีม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ขนาดทีม\n(จ.น.คน)",
+              "displayName": "ขนาดทีม\n(จ.น.คน)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่ออกเดินทาง",
+              "displayName": "วันที่ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาที่ออกเดินทาง",
+              "displayName": "เวลาที่ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลา ออกเดินทาง",
+              "displayName": "วันและเวลา ออกเดินทาง",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "วันที่เริ่มซ่อม",
+              "displayName": "วันที่เริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาที่เริ่มซ่อม",
+              "displayName": "เวลาที่เริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลาเริ่มซ่อม",
+              "displayName": "วันและเวลาเริ่มซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "สถานะ",
+              "displayName": "สถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่ของสถานะ",
+              "displayName": "วันที่ของสถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "เวลาของสถานะ",
+              "displayName": "เวลาของสถานะ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "วันและเวลาซ่อมเสร็จ",
+              "displayName": "วันและเวลาซ่อมเสร็จ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ",
+              "displayName": "สาเหตุ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วันที่",
+              "displayName": "วันที่",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลาที่หยุด, เลิกซ่อม",
+              "displayName": "เวลาที่หยุด, เลิกซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เวลา",
+              "displayName": "เวลา",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "วิธีแก้ไขเหตุเสีย",
+              "displayName": "วิธีแก้ไขเหตุเสีย",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สาเหตุ Over SLA",
+              "displayName": "สาเหตุ Over SLA",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของดี/เลขSAP",
+              "displayName": "ของดี/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ของเสีย/เลขSAP",
+              "displayName": "ของเสีย/เลขSAP",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        880,
+        688
+      ],
+      "id": "3629b0e2-8bb1-4745-8412-7157c583047e",
+      "name": "Tools Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f72d226e-bd76-4673-9541-7541e5d9de3c",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "=query_ticket",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "6ed8fff0-82fc-4aa2-94a8-f2d10fd80543",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "=today_summary",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "bce04745-a77c-46b2-821f-90ea49f098d4",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "query_site",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "b430dfb2-687f-4015-8ba3-b4c9abd0fbef",
+              "leftValue": "={{$json.mode}}",
+              "rightValue": "=close_detail",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "892d4e77-b820-45a8-a936-58d42a8a36b2",
+              "leftValue": "={{ $json.is_image_upload }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "5b3fefaf-9e15-43df-a6cd-6bba84f695db",
+      "name": "IF - Query Mode",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * 1. ดึงผลลัพธ์จาก AI Agent\n * โดยปกติจะอยู่ในฟิลด์ 'output' แต่เราดักเผื่อไว้หลายๆ ทาง\n */\nconst aiOutput = $json.output || $json.text || \"{}\";\nlet parsedAI;\n\n// 2. พยายามแปลง String (JSON) ที่ AI ส่งมาให้กลายเป็น Object\ntry {\n  // ถ้าเป็น String ให้ Parse แต่ถ้าเป็น Object อยู่แล้วก็ใช้ได้เลย\n  parsedAI = typeof aiOutput === 'string' ? JSON.parse(aiOutput) : aiOutput;\n} catch (e) {\n  // ถ้า AI ดื้อ ส่ง JSON พังมา ให้เก็บค่าดิบไว้ตรวจสอบ\n  parsedAI = { \n    ticket_no: null, \n    error: \"AI_FORMAT_ERROR\", \n    raw_response: aiOutput \n  };\n}\n\n/**\n * 3. รวมร่างข้อมูล (Merge) \n * ดึงค่า userId และข้อมูลดั้งเดิมจากโหนด JavaScript2 กลับคืนมา\n */\nreturn [{\n  json: {\n    ...parsedAI, // ข้อมูลที่ AI สรุป (ticket_no, severity, fault_date, etc.)\n    \n    // ดึง userId จากโหนด JavaScript2 (โหนดก่อนหน้า AI)\n    userId: $node[\"Code in JavaScript2\"].json.userId || \"Unknown\",\n    \n    // ดึงรูปภาพกลับมา (ถ้ามี)\n    close_image: $node[\"Code in JavaScript2\"].json.original_data?.close_image || null,\n    \n    processed_at: $now.format('YYYY-MM-DD HH:mm:ss') // ใส่เวลาที่ประมวลผลเสร็จ\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        64
+      ],
+      "id": "7dfd1a8c-b82e-4d28-af54-d5bb4c07e08f",
+      "name": "Merge User",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function safeParse(raw) {\n  if (!raw) return null;\n\n  // ถ้าเป็น object อยู่แล้ว\n  if (typeof raw === \"object\") return raw;\n\n  if (typeof raw !== \"string\") return null;\n\n  try {\n    const cleaned = raw\n      .replace(/^```json\\s*/i, '')\n      .replace(/```$/i, '')\n      .trim();\n\n    return JSON.parse(cleaned);\n  } catch (e) {\n    return null;\n  }\n}\n\nconst original = $json; // ✅ เก็บข้อมูลเดิมทั้งหมด (userId, replyToken ฯลฯ)\nconst parsed = safeParse(original.finalMessage);\n\nconst requiredKeys = [\n  \"ticket_no\",\n  \"severity\",\n  \"fault_date\",\n  \"expected_date\",\n  \"owner\",\n  \"go_time\",\n  \"start_time\",\n  \"done_time\",\n  \"status\"\n];\n\n// ❌ กรณี AI ส่ง JSON ไม่ถูก\nif (!parsed) {\n  return [{\n    json: {\n      ...original,\n      error: true,\n      message: \"❌ AI ส่ง JSON ไม่ถูกต้อง\"\n    }\n  }];\n}\n\n// ❌ กรณี key ไม่ครบ\nfor (const key of requiredKeys) {\n  if (!(key in parsed)) {\n    return [{\n      json: {\n        ...original,\n        error: true,\n        message: `❌ JSON structure ไม่ครบ (ขาด ${key})`\n      }\n    }];\n  }\n}\n\n// ✅ สำเร็จ → merge ของเดิม + parsed\nreturn [{\n  json: {\n    ...original,  // ✅ เก็บ userId / replyToken / source\n    ...parsed     // ✅ ทับด้วยข้อมูลที่ parse แล้ว\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        64
+      ],
+      "id": "5d63a23a-778c-4f0b-b702-17933c460c3b",
+      "name": "Parse Final JSON",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 288,
+        "width": 608,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        752
+      ],
+      "id": "7b7dd3ca-57a7-436d-b8de-42be86545355",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "       ยังไม่เข้า node (ยังไม่ได้ใช้)",
+        "height": 80,
+        "width": 326,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        944,
+        832
+      ],
+      "id": "05013f36-bd1e-44bb-a2a1-d425f6b4519c",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2097907540,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit#gid=2097907540"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Service",
+              "displayName": "Job Service",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "บริษัทรับเหมา",
+              "displayName": "บริษัทรับเหมา",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ออกเดินทาง (Go)",
+              "displayName": "ออกเดินทาง (Go)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "เริ่มซ่อม (Start)",
+              "displayName": "เริ่มซ่อม (Start)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "สถานะการซ่อม (Recovery)",
+              "displayName": "สถานะการซ่อม (Recovery)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Serial Number",
+              "displayName": "Serial Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "locationDefine": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        720,
+        704
+      ],
+      "id": "9b50def1-f5d6-478e-8335-7e438057008e",
+      "name": "Get row(s) in Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5babda58-81d0-4a73-8610-6a422d946b38",
+              "leftValue": "={{$json.ticket_no}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1072,
+        64
+      ],
+      "id": "c71f7379-777a-4302-b902-e8b28d0c3610",
+      "name": "If",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node[\"Line Messaging Trigger\"].json.source.groupId \n|| $node[\"Line Messaging Trigger\"].json.source.roomId \n|| $node[\"Line Messaging Trigger\"].json.source.userId}}",
+        "messages": {
+          "values": [
+            {
+              "text": "=📌 Ticket: {{$json.ticket_no}}\n⚡ Severity: {{$json.severity}}\n\n🕒 Open: {{$json.open_ticket}}\n📅 Fault: {{$json.fault_date}}\n📆 Expected: {{$json.expected_date}}\n🚗 Go: {{$json.go_time}}\n🔧 Start: {{$json.start_time}}\n✅ Done: {{$json.done_time}}\n📍 Status: {{$json.status}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        48
+      ],
+      "id": "c2011a7f-8f7e-4d14-8ab1-7fceb98073f4",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "aJgZGG757I8itMKK",
+          "name": "Bot-SYS2 02/03"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "798c952e-16d5-4a69-bc47-a354bbfc12cf",
+              "name": "TT No",
+              "value": "={{$json.ticket_no}}",
+              "type": "string"
+            },
+            {
+              "id": "52a5d7bd-9cd9-40a0-81d7-75aadaad18cf",
+              "name": "Severity",
+              "value": "={{ $json.severity }}",
+              "type": "string"
+            },
+            {
+              "id": "12152c67-4c01-47e0-897c-f0b89a5ff7da",
+              "name": "SLA/TM (หน่วย ชม)",
+              "value": "={{\n  $json.severity === 'NSA1' ? 4 :\n  $json.severity === 'NSA2' ? 8 :\n  $json.severity === 'NSA3' ? 14 :\n  $json.severity === 'NSA4' ? 24 :\n  0\n}}",
+              "type": "string"
+            },
+            {
+              "id": "0b0e29d4-e610-4fab-b6af-e408a94c1a98",
+              "name": "OpenTicketDate",
+              "value": "={{$json.fault_date}}",
+              "type": "string"
+            },
+            {
+              "id": "ae3a42a0-1b86-4048-9467-d64427660a44",
+              "name": "ExpectedDate",
+              "value": "={{\n  (() => {\n    const base = new Date($json.fault_date);\n\n    const addHours =\n      $json.severity === 'NSA1' ? 4 :\n      $json.severity === 'NSA2' ? 8 :\n      $json.severity === 'NSA3' ? 14 :\n      $json.severity === 'NSA4' ? 24 :\n      0;\n\n    const result = new Date(base.getTime() + addHours * 60 * 60 * 1000);\n\n    const pad = (n) => n.toString().padStart(2, '0');\n\n    return result.getFullYear() + '-' +\n      pad(result.getMonth() + 1) + '-' +\n      pad(result.getDate()) + ' ' +\n      pad(result.getHours()) + ':' +\n      pad(result.getMinutes()) + ':' +\n      pad(result.getSeconds());\n  })()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "3c74b154-8314-4e96-befd-b185c03d0a7a",
+              "name": "owner",
+              "value": "={{ $json.owner }}",
+              "type": "string"
+            },
+            {
+              "id": "704cfe8b-2997-4868-a5cf-bb8a74312a85",
+              "name": "go_time",
+              "value": "={{ $json.go_time }}",
+              "type": "string"
+            },
+            {
+              "id": "c61c0ad9-8eb6-4e7b-9d42-6bfff8752335",
+              "name": "start_time",
+              "value": "={{ $json.start_time }}",
+              "type": "string"
+            },
+            {
+              "id": "a6168b76-77a9-4feb-b5b4-8945318971e7",
+              "name": "done_time",
+              "value": "={{ $json.done_time }}",
+              "type": "string"
+            },
+            {
+              "id": "1f2b3bdd-7fc2-496f-9440-304448cbd1a4",
+              "name": "sccd",
+              "value": "==https://maximo.truecorp.co.th/maximo/ui/maximo.jsp?event=loadapp&value=trueinc&additionalevent=useqbe&additionaleventvalue=ticketid={{$json.ticket_no}}",
+              "type": "string"
+            },
+            {
+              "id": "d2ac34f7-1d8b-4523-831f-a5cb58f0c49b",
+              "name": "userId",
+              "value": "={{$json.userId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        -16
+      ],
+      "id": "b0a90d5b-6426-4557-b81b-88f8aec04fc6",
+      "name": "Edit Fields",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "บันทึกข้อมูล",
+        "height": 176,
+        "width": 150,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1392,
+        -64
+      ],
+      "typeVersion": 1,
+      "id": "e31241dc-fb4c-44e0-a0ac-0265573fe5f2",
+      "name": "Sticky Note12",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ===============================\n// Helper Functions\n// ===============================\nconst clean = (v) => {\n  if (v === undefined || v === null) return null;\n  const s = String(v).trim();\n  return s === \"\" ? null : s;\n};\n\nconst formatDateTime = (d) => {\n  if (!d) return null;\n\n  let date = new Date(d);\n\n  if (isNaN(date)) {\n    const parts = String(d).split(/[\\/ :]/);\n    if (parts.length >= 3) {\n      const [day, month, year, h = 0, m = 0, s = 0] = parts;\n      date = new Date(year, month - 1, day, h, m, s);\n    }\n  }\n\n  if (isNaN(date)) return null;\n\n  const pad = (n) => n.toString().padStart(2, \"0\");\n\n  return (\n    date.getFullYear() +\n    \"-\" +\n    pad(date.getMonth() + 1) +\n    \"-\" +\n    pad(date.getDate()) +\n    \" \" +\n    pad(date.getHours()) +\n    \":\" +\n    pad(date.getMinutes()) +\n    \":\" +\n    pad(date.getSeconds())\n  );\n};\n\n// ===============================\n// Get Raw Input\n// ===============================\nconst data = $json;\n\n// ===============================\n// Field Mapping\n// ===============================\nconst ticketNo = clean(\n  data[\"TT No\"] ??\n  data[\"TTNo\"] ??\n  data.ticket_no ??\n  data.ticketNo ??\n  data.id\n);\n\nif (!ticketNo) {\n  return [{\n    json: {\n      success: false,\n      error: \"TT No missing\"\n    }\n  }];\n}\n\nconst severityRaw = clean(data.Severity ?? data.severity);\nconst severity = severityRaw ? severityRaw.toUpperCase() : null;\n\n// Open Ticket\nconst openTicketRaw =\n  data.OpenTicketDate ??\n  data.open_ticket_date;\n\nconst openTicket = formatDateTime(openTicketRaw);\n\n// Fault Date\nconst faultDateRaw =\n  data.fault_date ??\n  openTicketRaw;\n\nconst faultDate = formatDateTime(faultDateRaw);\n\n// Expected\nlet expectedDateRaw =\n  data.ExpectedDate ??\n  data.expected_date;\n\nlet expectedDate = formatDateTime(expectedDateRaw);\n\n// Other fields\nconst owner = clean(data.owner ?? data.Owner);\nconst goTime = clean(data.go_time ?? data.GoTime);\nconst startTime = clean(data.start_time ?? data.StartTime);\nconst doneTime = clean(data.done_time ?? data.DoneTime);\n\n// ===============================\n// Auto Calculate Expected Date\n// ===============================\nif (!expectedDate && faultDate && severity) {\n\n  const base = new Date(faultDate);\n\n  const addDays = (days) => {\n    const d = new Date(base);\n    d.setDate(d.getDate() + days);\n    return formatDateTime(d);\n  };\n\n  switch (severity) {\n    case \"CRITICAL\":\n    case \"NSA4\":\n      expectedDate = addDays(1);\n      break;\n\n    case \"HIGH\":\n    case \"NSA3\":\n      expectedDate = addDays(3);\n      break;\n\n    case \"MEDIUM\":\n    case \"NSA2\":\n      expectedDate = addDays(5);\n      break;\n\n    case \"LOW\":\n    case \"NSA1\":\n      expectedDate = addDays(7);\n      break;\n  }\n}\n\n// ===============================\n// Auto Status\n// ===============================\nlet status = \"OPEN\";\n\nif (doneTime) {\n  status = \"DONE\";\n} else if (startTime) {\n  status = \"IN PROGRESS\";\n}\n\n// ===============================\n// Final Output\n// ===============================\nreturn {\n  success: true,\n  ticket_no: ticketNo,\n  severity: severity,\n  open_ticket: openTicket,\n  fault_date: faultDate,\n  expected_date: expectedDate,\n  owner: owner,\n  go_time: goTime,\n  start_time: startTime,\n  done_time: doneTime,\n  status\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        -96
+      ],
+      "id": "d0a8391a-7546-4017-b04d-948e0ea0c189",
+      "name": "Normalize Ticket Data",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log(\"DEBUG DATA:\", $input.first().json);\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        64
+      ],
+      "id": "ffd0bbb1-d839-4d4c-aff8-54e57d25a24f",
+      "name": "Code ViewError",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  if (!item.json.reply || item.json.reply.trim() === \"\") {\n    item.json.reply = \"ขออภัย ระบบไม่สามารถสร้างคำตอบได้ กรุณาลองใหม่อีกครั้ง\";\n  }\n  return item;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        144
+      ],
+      "id": "145fcf6b-955e-41c9-a4c9-796d9fd4504b",
+      "name": "Code in JavaScript",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "reply To userId / GroupId\n\n//Follow Up Prob userId",
+        "height": 288,
+        "width": 198,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1904,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "698762b7-9443-4e94-93e4-97e7dd480e7d",
+      "name": "Sticky Note13",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "2️⃣ Detect Mode\nวิเคราะห์ว่าผู้ใช้ต้องการอะไร\nMode ที่เป็นไปได้\nupdate_ticket\nquery_ticket\ntoday_summary\nquery_site\nunknown",
+        "height": 176,
+        "width": 198
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "a774a1ad-c793-4eb7-90b6-9e475541ed65",
+      "name": "Sticky Note14"
+    },
+    {
+      "parameters": {
+        "content": "4️⃣ Parse JSON\nตรวจสอบว่า:\nJSON ถูกต้อง\nKey ครบ\nถ้าไม่ครบ → แจ้ง Error",
+        "height": 128,
+        "width": 176
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -336,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "065cec6b-a53e-471d-b3a3-1b2f97ad891a",
+      "name": "Sticky Note15",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "6️⃣ บันทึก Google Sheet\n\nบันทึกข้อมูล Ticket ลง Sheet อัตโนมัติ",
+        "height": 240,
+        "width": 256
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        96,
+        -704
+      ],
+      "typeVersion": 1,
+      "id": "186a6dd1-e6d7-4822-9493-93d2d78272ee",
+      "name": "Sticky Note3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "ใช้ “เฉพาะกรณี” ที่ AI Agent ส่งค่าออกมาเป็น string เท่านั้น",
+        "height": 176,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -64,
+        -1040
+      ],
+      "typeVersion": 1,
+      "id": "ab1255c8-dc57-42b2-bd2d-bbb912e8c095",
+      "name": "Sticky Note16",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "ERROR HANDLER",
+        "width": 150,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1920,
+        256
+      ],
+      "typeVersion": 1,
+      "id": "169b34f7-81f7-4baa-909d-79f1c11d334a",
+      "name": "Sticky Note17",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "# 🚀 Ticket Automation Workflow\n\n## 1) LINE Trigger\n- รองรับ Private Chat และ Group\n- ใช้ userId / groupId อัตโนมัติ\n- Trigger เมื่อมี message event\n\n## 2) Mode Detection\n- ตรวจหา TT\\d+\n- แยกโหมด:\n  - update_ticket\n  - query_ticket\n  - today_summary\n  - query_site\n\n## 3) AI Parsing (Gemini)\n- แปลงข้อความเป็น Flat JSON เท่านั้น\n- ห้ามมี Markdown / ห้ามมี Text เกิน\n- คืนค่า null หากไม่พบข้อมูล\n- Regex ที่ใช้:\n  - TT\\d+\n  - NSA1–NSA4\n  - !Go#HH:mm\n  - !Star#HH:mm\n  - !Done#HH:mm\n\n## 4) JSON Validation\n- Parse string → JSON\n- ตรวจครบ 9 fields:\n  - ticket_no\n  - severity\n  - fault_date\n  - expected_date\n  - owner\n  - go_time\n  - start_time\n  - done_time\n  - status\n- ถ้าโครงสร้างผิด → ส่ง Error กลับ LINE\n\n## 5) SLA Calculation\n- NSA1 = 4 ชม.\n- NSA2 = 8 ชม.\n- NSA3 = 14 ชม.\n- NSA4 = 24 ชม.\n- คำนวณ ExpectedDate อัตโนมัติ (Asia/Bangkok)\n\n## 6) Auto Status Logic\n- done_time → Done\n- start_time → In Progress\n- go_time → On Site\n- ไม่มีเวลา → Open\n\n## 7) Google Sheets Integration\n- Append Row\n- Auto Retry เมื่อ Fail\n- ถ้า Error → แจ้งเตือนกลับ LINE\n\n## 8) LINE Summary Response\nแสดงผล:\n- Ticket No\n- Severity (พร้อม Emoji)\n- Fault Date\n- Expected Date\n- Go / Start / Done\n- Status",
+        "height": 1680,
+        "width": 560,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2368,
+        -608
+      ],
+      "typeVersion": 1,
+      "id": "ec0d8e83-408b-422a-b0d9-f7d580852534",
+      "name": "Sticky Note18"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node[\"Line Messaging Trigger\"].json.source.groupId || $node[\"Line Messaging Trigger\"].json.source.userId}}",
+        "messages": {
+          "values": [
+            {
+              "quoteToken": "={{ $node[\"Line Messaging Trigger\"].json.source.groupId || $node[\"Line Messaging Trigger\"].json.source.userId }}",
+              "text": "=⚠️ ระบบไม่สามารถบันทึก Ticket ได้\n\nสาเหตุ:\n{{$json.message || \"ข้อมูลไม่ถูกต้อง\"}}\n\nกรุณาตรวจสอบรูปแบบข้อความอีกครั้ง"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        832,
+        1200
+      ],
+      "id": "f8ff3be7-b498-4b46-a603-1bac992f26f8",
+      "name": "Line Messaging SendError",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "T6r34cSYwbockIDL",
+          "name": "SYS-Report1"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "รับข้อความจาก LINE ",
+        "width": 224,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3632,
+        -1072
+      ],
+      "typeVersion": 1,
+      "id": "ab69f374-70d7-4a13-a69e-f74e5816b6d6",
+      "name": "Sticky Note19",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "PHASE 2 — AI Parsing",
+        "width": 304,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "34e9faf6-7321-4988-a15f-de2a3c68f5a7",
+      "name": "Sticky Note20",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "PHASE 3 — Validate Ticket",
+        "width": 256,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        848,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "87cc8453-c2aa-44af-ba8f-4e9efaf7f29f",
+      "name": "Sticky Note21",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "PHASE 4 — Prepare + Save Sheet",
+        "width": 256,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1248,
+        -352
+      ],
+      "typeVersion": 1,
+      "id": "4fac42e7-15f1-4f17-bdf8-5bdf817cb817",
+      "name": "Sticky Note22",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "Normalize Ticket Data Node\n",
+        "height": 176,
+        "width": 304,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1696,
+        -336
+      ],
+      "typeVersion": 1,
+      "id": "4076c303-151a-4cad-923d-7e5c54aba8e2",
+      "name": "Sticky Note23",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. ดึงข้อมูลทั้งหมดที่ไหลเข้ามาหาโหนดนี้ (ไม่ว่าจะมาจากสายไหน)\nconst items = $input.all();\n\nreturn items.map(item => {\n  const data = item.json;\n  \n  // 2. ปั้นข้อความใหม่ (Template) เพื่อให้ AI อ่านง่ายที่สุด\n  // ใช้เครื่องหมาย ?? เพื่อกันค่าเป็น null หรือ undefined\n  const combinedText = `\n[DATA INPUT]\nTicket No: ${data.ticket_no ?? 'N/A'}\nTimeline: ${data.timeline ?? 'N/A'}\nCause: ${data.cause ?? 'N/A'}\nFix: ${data.fix ?? 'N/A'}\nLocation: ${data.location ?? 'N/A'}\nRaw Message: ${data.full_text ?? data.text ?? 'N/A'}\n`.trim();\n\n  return {\n    json: {\n      text: combinedText, // ส่งก้อนนี้เข้า Prompt AI\n      original_data: data, // เก็บก้อนเดิมไว้กันเหนียว\n      userId: data.userId ?? \"Unknown\" // ดึง userId มาดักไว้\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        64
+      ],
+      "id": "058c7e05-039a-4af2-82dd-16c883323f66",
+      "name": "Code in JavaScript2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "replyToken": "={{$node[\"Line Messaging Trigger\"].json.replyToken}}",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ `⚠️ บันทึก Ticket ไม่สำเร็จสาเหตุ:${$json.message || \"ข้อมูลไม่ถูกต้อง\"}`}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        320
+      ],
+      "id": "f09cede6-3755-45b2-ac1a-a67790c7e2c8",
+      "name": "Line Messaging SendError1",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "aJgZGG757I8itMKK",
+          "name": "Bot-SYS2 02/03"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1568,
+        -208
+      ],
+      "id": "1375ce28-d5be-4904-a24a-7ff359a9510f",
+      "name": "Merge",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [$input.first()];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        368
+      ],
+      "id": "98a0307b-946b-4024-9ffc-42151cf5283f",
+      "name": "Code in JavaScript3",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "",
+        "width": 150,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1536,
+        -240
+      ],
+      "typeVersion": 1,
+      "id": "949b80bd-97c0-4f4d-b242-e8c1060ee12a",
+      "name": "Sticky Note25",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "Reply ลงในกลุ่ม = /\n",
+        "height": 208,
+        "width": 278
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2080,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "1b8af5e2-5910-4965-bcf5-637f7da5683c",
+      "name": "Sticky Note26"
+    },
+    {
+      "parameters": {
+        "content": "if Node\n   ticket_no?",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1072,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "f38e0eee-5142-4a4a-915c-28c20ce9ad19",
+      "name": "Sticky Note27",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "Workflow: Ticket Normalization\nStep 1: จัดระเบียบข้อมูล (Normalize Ticket Data)\nStep 2: ตรวจสอบเงื่อนไข (ticket_no)\n\nCase: TRUE (มีเลข Ticket)\nAction: บันทึกงาน\nSystem: Append ข้อมูลลงใน Sheet\n\nCase: FALSE (ไม่มีเลข Ticket)\nAction: แจ้งเตือนข้อผิดพลาด\nSystem: ส่งข้อความตอบกลับทาง LINE (LINE Reply)",
+        "height": 240,
+        "width": 352
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        992,
+        208
+      ],
+      "typeVersion": 1,
+      "id": "80ed279d-914a-430f-8208-8fad568db516",
+      "name": "Sticky Note28",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = JSON.parse($json.output);\nreturn [\n  {\n    json: data\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        480
+      ],
+      "id": "5db99b23-a587-4fa3-95e4-bba8b5f59815",
+      "name": "Code in JavaScript4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        480
+      ],
+      "id": "bcaf4652-bb47-434e-8dfb-31b04398780b",
+      "name": "Code in JavaScript5",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "537f0cd9-600c-4c86-840f-8adc5bcb1b00",
+              "leftValue": "={{$json.message.type}}",
+              "rightValue": "=image",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1680,
+        448
+      ],
+      "id": "cfbde514-0932-442f-8ade-276ded2c2ae1",
+      "name": "If1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{$json.message.id}}/content",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer SsNQ4YO1JwFMLHdOxeTlKVbCxHbKgnn47SYTODEMgJSHyS4qlNBwEq8GnqotCJpIBtVDJeMWSeQ5Y4LPS1DWYhHDfXKM0b81+0MIkTshYTGbJNqC7roI3xkbIln1+yloqNnFgmb3Kf4rjFwjfBhdegdB04t89/1O/w1cDnyilFU="
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -4784,
+        1552
+      ],
+      "id": "6df30bb8-22df-4e75-a5ee-26e55b458ee7",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputData = $json || {};\n\nreturn [\n{\njson: {\nticket_no: inputData.ticket_no ?? null,\n\nseverity: inputData.severity ?? \"Normal\",\n\nfault_date: inputData.fault_date ?? null,\nexpected_date: inputData.expected_date ?? null,\n\ngo_time: inputData.go_time ?? \"\",\nstart_time: inputData.start_time ?? \"\",\ndone_time: inputData.done_time ?? \"\",\n\ntimeline: (inputData.timeline || \"\")\n.split(\"\\n\")\n.filter(line => !line.match(/^\\d+\\.\\d+\\s+\\d+\\.\\d+$/))\n.join(\"\\n\"),\n\ncause: inputData.cause ?? \"\",\nfix: inputData.fix ?? \"\",\n\nlocation: inputData.location ?? \"\",\nmap_link: inputData.location\n? \"https://maps.google.com/?q=\" + inputData.location\n: \"\",\n\ntechnician: inputData.technician ?? \"\",\ndistance: inputData.distance ?? \"\",\nprovince: (inputData.province || \"\").trim(),\n\nfull_text: inputData.full_text ?? \"\"\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2544,
+        -1008
+      ],
+      "id": "317baa89-0d80-41b5-84ff-deda30289d30",
+      "name": "Save Work Detail",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed =\n$node[\"Parse close job\"]?.json ||\n$node[\"Save Work Detail\"]?.json ||\n{};\n\nconst imageUrl =\n$json.webViewLink ||\n$json.webContentLink ||\n\"\";\n\nconst userId =\n$node[\"Line Messaging Trigger\"]?.json?.source?.userId ||\n$node[\"Line Messaging Trigger\"]?.json?.events?.[0]?.source?.userId ||\n\"\";\n\nreturn [{\njson:{\n...parsed,\nimage_url: imageUrl,\nuserId: userId,\ntimestamp: new Date().toISOString()\n}\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        -832
+      ],
+      "id": "44011257-f117-49fe-8356-26ef16856d6f",
+      "name": "Attach Ticket Image",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "เก็บ Detail สร้าง json",
+        "height": 144,
+        "width": 160
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2560,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "fdd5f271-f567-4cec-ac0d-fa568a1e8a99",
+      "name": "Sticky Note29",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -256,
+        16
+      ],
+      "id": "26233b87-2435-4fd7-9d78-ff6c43387276",
+      "name": "Merge1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "//TODO: NEXT Mapping Data",
+        "height": 80,
+        "width": 326
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -256,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "4c8f5609-14f5-4610-ab53-6b11c3915567",
+      "name": "Sticky Note39",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "ปัญหาที่เจอ \n สมมติ ส่งข้อความกับรูปภาพ มันจะเอาเเค่ข้อความอย่างเดียว ",
+        "width": 390,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -240,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "8772bb6e-ad1d-436d-990d-e5500c29b0e0",
+      "name": "Sticky Note40",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2097907540,
+          "mode": "list",
+          "cachedResultName": "LABJob_System December 2025",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit#gid=2097907540"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Severity": "={{ $json.Severity }}",
+            "tt no.": "={{$json.ticket_no}}",
+            "row_number": 0
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tt no.",
+              "displayName": "tt no.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sla/tm",
+              "displayName": "sla/tm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sla/t",
+              "displayName": "sla/t",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "destination",
+              "displayName": "destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ticket_open_date",
+              "displayName": "ticket_open_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ticket_open_time",
+              "displayName": "ticket_open_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "dateaanddtime-openticket",
+              "displayName": "dateaanddtime-openticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "team",
+              "displayName": "team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Team size",
+              "displayName": "Team size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "depart_date",
+              "displayName": "depart_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "depart_time",
+              "displayName": "depart_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "departure_datetime",
+              "displayName": "departure_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "repair_start_date",
+              "displayName": "repair_start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "repair_start_time",
+              "displayName": "repair_start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "repair_start_datetime",
+              "displayName": "repair_start_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "repair_completion_date",
+              "displayName": "repair_completion_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "repair_completion_time",
+              "displayName": "repair_completion_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Repair completion time",
+              "displayName": "Repair completion time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_reason",
+              "displayName": "repair_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date_stop",
+              "displayName": "date_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "time_stop",
+              "displayName": "time_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "root_cause",
+              "displayName": "root_cause",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Repair Method",
+              "displayName": "Repair Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sla_breach_reason",
+              "displayName": "sla_breach_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SAP Material Number",
+              "displayName": "SAP Material Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Defective Material SAP Number",
+              "displayName": "Defective Material SAP Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No",
+              "displayName": "TT No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม)",
+              "displayName": "SLA/TM (หน่วย ชม)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "OpenTicketDate",
+              "displayName": "OpenTicketDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ExpectedDate",
+              "displayName": "ExpectedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "go_time",
+              "displayName": "go_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "done_time",
+              "displayName": "done_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "sccd",
+              "displayName": "sccd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1440,
+        -16
+      ],
+      "id": "d3beb097-225c-428e-ba4e-469db49126e6",
+      "name": "Update row in sheet",
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "alwaysOutputData": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let data = $json.output;\nlet parsed = {};\n\ntry {\n\n  // ถ้าเป็น string ให้ parse\n  if (typeof data === \"string\") {\n    parsed = JSON.parse(data);\n  } \n  \n  // ถ้าเป็น object อยู่แล้ว\n  else if (typeof data === \"object\" && data !== null) {\n    parsed = data;\n  }\n\n} catch (e) {\n\n  parsed = {};\n\n}\n\n// default fields กัน AI ลืมส่ง\nparsed.ticket_no = parsed.ticket_no ?? null;\nparsed.severity = parsed.severity ?? null;\nparsed.fault_date = parsed.fault_date ?? null;\nparsed.expected_date = parsed.expected_date ?? null;\nparsed.owner = parsed.owner ?? null;\nparsed.go_time = parsed.go_time ?? null;\nparsed.start_time = parsed.start_time ?? null;\nparsed.done_time = parsed.done_time ?? null;\nparsed.status = parsed.status ?? null;\n\nreturn [\n  {\n    json: parsed\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -176
+      ],
+      "id": "e9b9ddd4-3d90-4b99-afce-9cb421039c27",
+      "name": "Code in JavaScript6",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "=={{ $json.mode }}",
+                    "rightValue": "=query_ticket",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "2cdf4dd7-d3b6-4abe-ada7-e7602068a30b"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5358a761-c3f8-414d-bd92-1a14268c86a8",
+                    "leftValue": "={{ $json.mode }}",
+                    "rightValue": "today_summary",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ad5cb5bd-b231-4d40-9091-796371a77d48",
+                    "leftValue": "={{ $json.mode }}",
+                    "rightValue": "close_detail",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        160
+      ],
+      "id": "07184859-f960-4dcf-b0fa-5cb800728ad8",
+      "name": "Switch",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n{\njson: {\nmode: $json.mode,\ndebug: $json\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -304,
+        176
+      ],
+      "id": "3e342674-7e6c-4699-9c2f-990f92dbbdaf",
+      "name": "Debug SW",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "let data = $json.output;\n\nif (typeof data === \"string\") {\n  data = JSON.parse(data);\n}\n\nconst schema = {\n  ticket_no: null,\n  severity: null,\n  fault_date: null,\n  expected_date: null,\n  owner: null,\n  go_time: null,\n  start_time: null,\n  done_time: null,\n  status: null,\n  timeline: null,\n  location: null\n};\n\nfor (const key in schema) {\n  if (!(key in data)) {\n    data[key] = null;\n  }\n}\n\nreturn [{ json: data }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -176
+      ],
+      "id": "77f41988-c90c-49be-8007-42b77a2d2652",
+      "name": "Auto Repair JSON",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node[\"Line Messaging Trigger\"].json.source.groupId \n|| $node[\"Line Messaging Trigger\"].json.source.roomId \n|| $node[\"Line Messaging Trigger\"].json.source.userId}}",
+        "messages": {
+          "values": [
+            {
+              "text": "=📌 Ticket: {{$json.ticket_no}}\n\nFault Date:{{$json.fault_date}}\nExpected Date: {{$json.expected_date}}\n\n👨‍🔧 Technician: {{$json.technician}}\n📍 Province: {{$json.province}}\n\n🚗 Go Time: {{$json.go_time}}\n🔧 Start Time: {{$json.start_time}}\n✅ Done Time: {{$json.done_time}}\n\n📍 Location: {{$json.location}}\n\n⚠ Cause:\n{{$json.cause}}\n\n🛠 Fix:\n{{$json.fix}}\n\n📝 Timeline:\n{{$json.timeline}}\n"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -1616,
+        -912
+      ],
+      "id": "45a74b18-0ff4-46e3-bc09-a63906bab1c6",
+      "name": "Line Messaging1",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "T6r34cSYwbockIDL",
+          "name": "SYS-Report1"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB(Node)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "url",
+          "value": "=2097907540",
+          "__regex": "https:\\/\\/docs\\.google\\.com\\/spreadsheets\\/d\\/[0-9a-zA-Z\\-_]+.*\\#gid=([0-9]+)"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "OpenTicketDate": "={{$json.fault_date}}",
+            "ExpectedDate": "={{$json.expected_date}}",
+            "severity": "={{$json.severity}}",
+            "Severity": "={{$json.severity}}",
+            "go_time": "={{$json.go_time}}",
+            "start_time": "={{$json.start_time}}",
+            "done_time": "={{$json.done_time}}",
+            "root_cause": "={{ $json.root_cause }}",
+            "Repair Method": "={{ $json.repair_method }}",
+            "Admin Name": "={{$json.technician}}",
+            "CM report": "={{$json.image_url}}",
+            "userId": "={{ $json.userId }}",
+            "tt no.": "={{ $json.tt_no }}",
+            "ticket_open_time": "=",
+            "ticket_open_date": "={{ $json.open_date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tt no.",
+              "displayName": "tt no.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla/tm",
+              "displayName": "sla/tm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla/t",
+              "displayName": "sla/t",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "destination",
+              "displayName": "destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_open_date",
+              "displayName": "ticket_open_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_open_time",
+              "displayName": "ticket_open_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateaanddtime-openticket",
+              "displayName": "dateaanddtime-openticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "team",
+              "displayName": "team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Team size",
+              "displayName": "Team size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depart_date",
+              "displayName": "depart_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depart_time",
+              "displayName": "depart_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "departure_datetime",
+              "displayName": "departure_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_date",
+              "displayName": "repair_start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_time",
+              "displayName": "repair_start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_datetime",
+              "displayName": "repair_start_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_completion_date",
+              "displayName": "repair_completion_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_completion_time",
+              "displayName": "repair_completion_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Repair completion time",
+              "displayName": "Repair completion time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_reason",
+              "displayName": "repair_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date_stop",
+              "displayName": "date_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time_stop",
+              "displayName": "time_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "root_cause",
+              "displayName": "root_cause",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Repair Method",
+              "displayName": "Repair Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla_breach_reason",
+              "displayName": "sla_breach_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SAP Material Number",
+              "displayName": "SAP Material Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Defective Material SAP Number",
+              "displayName": "Defective Material SAP Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No",
+              "displayName": "TT No",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA/TM (หน่วย ชม)",
+              "displayName": "SLA/TM (หน่วย ชม)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "OpenTicketDate",
+              "displayName": "OpenTicketDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ExpectedDate",
+              "displayName": "ExpectedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "go_time",
+              "displayName": "go_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "start_time",
+              "displayName": "start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "done_time",
+              "displayName": "done_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sccd",
+              "displayName": "sccd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1808,
+        -752
+      ],
+      "id": "8c06d088-4a67-4fe5-a74a-54766cb18d7e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n    json: {\n        tt_no: $json.ticket_no || \"\",\n        severity: $json.severity || \"\",\n        fault_date: $json.fault_date || \"\", // เปลี่ยนจาก open_date\n        expected_date: $json.expected_date || \"\",\n        technician: $json.technician || \"\",\n        province: $json.province || \"\",\n        go_time: $json.go_time || \"\",\n        start_time: $json.start_time || \"\",\n        done_time: $json.done_time || \"\",\n        root_cause: $json.cause || \"\", // ให้ตรงกับที่ Map ใน Sheet\n        repair_method: $json.fix || \"\", // ให้ตรงกับที่ Map ใน Sheet\n        image_url: $json.image_url || $json.image || \"\", // เปลี่ยนจาก image\n        userId: $json.userId || \"\"\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1984,
+        -912
+      ],
+      "id": "38c9ab74-9cfd-4293-a663-79788ef7aed5",
+      "name": "Prepare Sheet Data",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "เเยกข้อมูล  img =? text ",
+        "height": 80,
+        "width": 230
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3344,
+        -848
+      ],
+      "typeVersion": 1,
+      "id": "64687a21-013c-44ec-9262-cc14263b6891",
+      "name": "Sticky Note38",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\n// 1. จัดการ Timeline: ถ้ามีข้อมูลให้ขึ้นบรรทัดใหม่และใส่ไอคอน 🕒\nconst timelineDisplay = d.timeline ? `\\n\\n🕒 **Timeline:**\\n${d.timeline}` : \"\";\n\n// 2. จัดการ Cause/Fix: ถ้าไม่มีข้อมูลให้แสดงว่า \"-\" เพื่อความสวยงาม\nconst causeText = d.cause || \"-\";\nconst fixText = d.fix || \"-\";\n\nconst message = `\n✅ **ปิดงานเรียบร้อย**\n\n📌 **Ticket:** ${d.ticket_no}\n⚡ **Severity:** ${d.severity}\n🌍 **Province:** ${d.province}\n\n📅 **Fault Date:** ${d.fault_date}\n📆 **Expected:** ${d.expected_date}\n\n🕒 **Time:** ${d.go_time} - ${d.done_time}\n(Start: ${d.start_time})\n\n🔧 **Cause:** ${causeText}\n🛠 **Fix:** ${fixText}\n\n📍 **Location:** ${d.location}\n🔗 **Map:** ${d.map_link}\n\n👨‍🔧 **Technician:** ${d.technician}${timelineDisplay}\n\n#CloseJob\n`;\n\nreturn [\n  {\n    json: {\n      ...d,      // รักษาข้อมูลเดิมทั้งหมด (lat, lng, ticket_no ฯลฯ)\n      message    // ส่งข้อความที่ประกอบร่างแล้วไปที่ LINE หรือ Sheets\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2736,
+        -1008
+      ],
+      "id": "c511e627-00e5-4ebd-a76a-1031cba51aa4",
+      "name": "Format Message",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8b312f96-86b7-4373-b080-e7a1de464683",
+              "leftValue": "={{ $json.message.type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -3344,
+        -992
+      ],
+      "id": "fd7b3bd5-a07d-4cec-a852-dd92dad91146",
+      "name": "IF (Check Message Type)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -2320,
+        -1504
+      ],
+      "id": "9eb8a104-4bca-441c-9b5b-e52283483b49",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "content": "รอครบ",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2336,
+        -1552
+      ],
+      "typeVersion": 1,
+      "id": "46e7fb65-3b8c-45d7-97c9-aa539dd6b1b1",
+      "name": "Sticky Note31"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    ...$json,\n    // ดึงเลข Ticket จากโหนด Detect Mode มาดักไว้\n    ticket_no: $node[\"Detect Mode\"].json[\"ticket_no\"], \n    // เก็บลิงก์รูปภาพ\n    close_image: $json.webViewLink || $json.webContentLink || $json.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1152,
+        -800
+      ],
+      "id": "326b8143-e755-45f8-9ac1-65ab1bdca806",
+      "name": "Attach Ticket (old)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "img\nเก็บรูปหลักฐานงาน",
+        "height": 80,
+        "width": 150,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2544,
+        -688
+      ],
+      "typeVersion": 1,
+      "id": "d8a5f38b-0723-44ca-b357-861141ffad24",
+      "name": "Sticky Note33",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "สร้างลิงก์แผนที่จาก lat/lng",
+        "height": 80,
+        "width": 208
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3040,
+        -672
+      ],
+      "typeVersion": 1,
+      "id": "6e317afb-1a75-433c-a43e-e13ea44b7d2f",
+      "name": "Sticky Note30",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "TEXT",
+        "height": 80,
+        "width": 150
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3008,
+        -1104
+      ],
+      "typeVersion": 1,
+      "id": "23fff169-46c4-4dd8-9dc9-c686771f2282",
+      "name": "Sticky Note34",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c67bf091-b2d1-4483-b207-908b94416972",
+              "name": "map_url",
+              "value": "=https://www.google.com/maps?q={{ $json.lat }},{{ $json.lng }}",
+              "type": "string"
+            },
+            {
+              "id": "78eb7d2f-32af-4fbb-a600-75ba12267f33",
+              "name": "map_link",
+              "value": "=https://www.google.com/maps/search/?api=1&query={{ $json.lat }},{{ $json.lng }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2928,
+        -1008
+      ],
+      "id": "5d4f579b-8642-46ef-94de-2561891d89dd",
+      "name": "Google map(Field)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const messageBody = $json.message?.text || $json.text || $json.full_text || \"\";\nconst text = messageBody.trim();\n\nif (!text) {\n    return { json: { ...$json, status: \"NO_TEXT_FOUND\" } };\n}\n\nlet timeline = [], cause = \"\", fix = \"\", go_time = \"\", start_time = \"\", done_time = \"\";\nlet ticket_no = \"\", technician = \"\", province = \"\", location = \"\", fault_date = \"\", expected_date = \"\";\nlet readCause = false, readFix = false, readTimeline = false;\n\nconst lines = text.split(\"\\n\");\n\nfor (const raw of lines) {\n    const line = raw.trim();\n    if (!line) continue;\n\n    // 1. ตรวจสอบหัวข้อ (Section Headers)\n    if (/^cause/i.test(line)) { readCause = true; readFix = false; readTimeline = false; continue; }\n    if (/^fix/i.test(line)) { readFix = true; readCause = false; readTimeline = false; continue; }\n    if (/^timeline/i.test(line)) { readTimeline = true; readCause = false; readFix = false; continue; }\n\n    // 2. ดึงข้อมูลรายบรรทัดด้วย Regex\n    const ticketMatch = line.match(/TT\\d+/i);\n    const goMatch     = line.match(/go\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i);\n    const startMatch  = line.match(/start\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i);\n    const doneMatch   = line.match(/done\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i); \n    const techMatch   = line.match(/technician\\s*[:\\-]\\s*(.*)/i);\n    const provMatch   = line.match(/province\\s*[:\\-]\\s*(.*)/i);\n    const faultMatch  = line.match(/fault\\s*date\\s*[:\\-]\\s*(.*)/i);\n    const expMatch    = line.match(/expected\\s*date\\s*[:\\-]\\s*(.*)/i);\n    const locMatch    = line.match(/(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)/);\n\n    const isNewField = /^\\w+(\\s+\\w+)?\\s*[:\\-]/i.test(line);\n\n    if (ticketMatch) { ticket_no = ticketMatch[0].toUpperCase(); }\n    if (goMatch)     { go_time = goMatch[1].replace(\".\", \":\"); readCause = false; readFix = false; }\n    if (startMatch)  { start_time = startMatch[1].replace(\".\", \":\"); readCause = false; readFix = false; }\n    if (doneMatch)   { done_time = doneMatch[1].replace(\".\", \":\"); readCause = false; readFix = false; }\n    if (techMatch)   { technician = techMatch[1].trim(); readCause = false; readFix = false; }\n    if (provMatch)   { province = provMatch[1].trim(); readCause = false; readFix = false; }\n    if (faultMatch)  { fault_date = faultMatch[1].trim(); readCause = false; readFix = false; }\n    if (expMatch)    { expected_date = expMatch[1].trim(); readCause = false; readFix = false; }\n    if (locMatch)    { location = locMatch[0]; }\n\n    if (/^\\d{1,2}[.:]\\d{2}/.test(line) || (readTimeline && !isNewField)) {\n        timeline.push(line);\n        continue;\n    }\n\n    if (readCause && !isNewField) cause += line + \" \";\n    if (readFix && !isNewField) fix += line + \" \";\n}\n\nlet [lat, lng] = location.includes(\",\") ? location.split(\",\").map(s => s.trim()) : [\"\", \"\"];\n\nreturn {\n    json: {\n        ...$json,\n        ticket_no, fault_date, expected_date, technician, province,\n        go_time, start_time, done_time, location, lat, lng,\n        cause: cause.trim(), fix: fix.trim(), timeline: timeline.join(\"\\n\"),\n        severity: \"Normal\", open_ticket: \"true\", status: \"CLOSED\"\n    }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3104,
+        -1008
+      ],
+      "id": "b4402b03-b8ac-48e4-80f0-3e683d713a34",
+      "name": "Parse close job",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "// TODO : output ไม่ครบ",
+        "height": 80,
+        "width": 246,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2560,
+        -1136
+      ],
+      "typeVersion": 1,
+      "id": "07cdff44-93b1-46df-9be1-46c6b6fc3895",
+      "name": "Sticky Note35",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "ใช้เมื่อมีรูป",
+        "height": 144,
+        "width": 150,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2336,
+        -864
+      ],
+      "typeVersion": 1,
+      "id": "3d519f11-d79c-4b0c-9d78-77e55c5a0e16",
+      "name": "Sticky Note36",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "//TODO: ที่กันข้อมูลซ้ำใน Google Sheets โดยใช้ TT No. เป็น key",
+        "height": 80,
+        "width": 448,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2032,
+        -1072
+      ],
+      "typeVersion": 1,
+      "id": "1c1f9364-f1d8-438d-ab9e-be596311c293",
+      "name": "Sticky Note37",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "events": [
+          "message"
+        ]
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessagingTrigger",
+      "typeVersion": 1,
+      "position": [
+        -5344,
+        1360
+      ],
+      "id": "837bc22b-c5c7-41d0-9cad-27ce524e5967",
+      "name": "Line Messaging Trigger1",
+      "webhookId": "ad1be466-fa74-4964-b291-ef13d30e11fe",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "SCEKceMJdNIgED1m",
+          "name": "Line SYSTHREE 3"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nreturn [{\n  json: {\n    ticket_no: d.ticket_no || \"\",\n    severity: d.severity || \"\",\n    fault_date: d.fault_date || \"\",\n    expected_date: d.expected_date || \"\",\n\n    technician: d.technician || \"\",\n    province: d.province || \"\",\n\n    go_time: d.go_time || \"\",\n    start_time: d.start_time || \"\",\n    done_time: d.done_time || \"\",\n\n    cause: d.cause || \"\",\n    fix: d.fix || \"\",\n\n    timeline: d.timeline || \"\",\n\n    location: d.location || \"\",\n    lat: d.lat || \"\",\n    lng: d.lng || \"\",\n\n    map_link: d.location\n      ? \"https://www.google.com/maps/search/?api=1&query=\" + d.location\n      : \"\",\n\n    image_url: d.image_url || \"\",\n    userId: d.userId || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4256,
+        1344
+      ],
+      "id": "0dc596a0-2741-43d8-953d-31a2641a2892",
+      "name": "Save Work Detail1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed =\n$node[\"Parse close job1\"]?.json ||\n$node[\"Save Work Detail1\"]?.json ||\n{};\n\nconst imageUrl =\n$json.webViewLink ||\n$json.webContentLink ||\n\"\";\n\nconst userId =\n$node[\"Line Messaging Trigger1\"]?.json?.source?.userId ||\n$node[\"Line Messaging Trigger1\"]?.json?.events?.[0]?.source?.userId ||\n\"\";\n\nreturn [{\njson:{\n...parsed,\nimage_url: imageUrl,\nuserId: userId,\ntimestamp: new Date().toISOString()\n}\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4384,
+        1552
+      ],
+      "id": "f75640ff-314f-482f-9951-a0f1a24b2daa",
+      "name": "Attach Ticket Image1"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "={{$node[\"Line Messaging Trigger1\"].json.source.groupId \n|| $node[\"Line Messaging Trigger1\"].json.source.roomId \n|| $node[\"Line Messaging Trigger1\"].json.source.userId}}",
+        "messages": {
+          "values": [
+            {
+              "text": "=📌 Ticket: {{ $('Parse close job1').item.json.ticket_no }}\n📅 Open Date: {{ $('Prepare Sheet Data1').item.json.open_date }}\n📆 Expected: {{ $('Save Work Detail1').item.json.expected_date }}\n\n🚗 Go Time: {{ $('Save Work Detail1').item.json.go_time }}\n🔧 Start Time: {{ $('Save Work Detail1').item.json.start_time }}\n✅ Done Time: {{ $('Save Work Detail1').item.json.done_time }}\n\n⚠ Cause:\n{{ $('Save Work Detail1').item.json.cause }}\n\n🛠 Fix:\n{{ $('Save Work Detail1').item.json.fix }}\n\n👨‍🔧 Technician:\n{{ $('Save Work Detail1').item.json.technician }}\n\n📄 Report Timeline:\n{{ $('Parse close job1').item.json.timeline }}\n\nGoogle map:\n{{ $('Save Work Detail1').item.json.map_link }}\n\n"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        -3584,
+        1344
+      ],
+      "id": "4c809c0b-9733-4c1a-80d7-90c7ac273d86",
+      "name": "Line Messaging2",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "T6r34cSYwbockIDL",
+          "name": "SYS-Report1"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU",
+          "mode": "list",
+          "cachedResultName": "testdataLAB(Node)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1SpkGa57uRLhoSbc0edGla0QX0gD586tjmrUFJ_xIFgU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "=2097907540",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "severity": "={{$json.severity}}",
+            "root_cause": "={{ $json.root_cause }}",
+            "Repair Method": "={{ $json.repair_method }}",
+            "Admin Name": "={{$json.technician}}",
+            "CM report": "={{$json.cm_report}}",
+            "ticket_open_time": "=",
+            "ticket_open_date": "={{ $json.open_date }}",
+            "Region": "UPC05",
+            "tt no.": "={{ $('Parse close job1').item.json.ticket_no }}",
+            "userId": "={{ $('Parse close job1').item.json.source.userId }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Region",
+              "displayName": "Region",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tt no.",
+              "displayName": "tt no.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "severity",
+              "displayName": "severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla/tm",
+              "displayName": "sla/tm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla/t",
+              "displayName": "sla/t",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "displayName": "tt : ที่เคลียร์โดยไม่ต้องซ่อม",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "destination",
+              "displayName": "destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_open_date",
+              "displayName": "ticket_open_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_open_time",
+              "displayName": "ticket_open_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateaanddtime-openticket",
+              "displayName": "dateaanddtime-openticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "team",
+              "displayName": "team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Team size",
+              "displayName": "Team size",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depart_date",
+              "displayName": "depart_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "depart_time",
+              "displayName": "depart_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "departure_datetime",
+              "displayName": "departure_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_date",
+              "displayName": "repair_start_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_time",
+              "displayName": "repair_start_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_start_datetime",
+              "displayName": "repair_start_datetime",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "state",
+              "displayName": "state",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_completion_date",
+              "displayName": "repair_completion_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_completion_time",
+              "displayName": "repair_completion_time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Repair completion time",
+              "displayName": "Repair completion time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total Recovery Time (hh:mm)",
+              "displayName": "Total Recovery Time (hh:mm)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SLA (OK/NOK)",
+              "displayName": "SLA (OK/NOK)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "repair_reason",
+              "displayName": "repair_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date_stop",
+              "displayName": "date_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time_stop",
+              "displayName": "time_stop",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "time",
+              "displayName": "time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "root_cause",
+              "displayName": "root_cause",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Repair Method",
+              "displayName": "Repair Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sla_breach_reason",
+              "displayName": "sla_breach_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "SAP Material Number",
+              "displayName": "SAP Material Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Defective Material SAP Number",
+              "displayName": "Defective Material SAP Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "TT No. / PW No.ServeritySource",
+              "displayName": "TT No. / PW No.ServeritySource",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Name",
+              "displayName": "Admin Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Admin Verify Date",
+              "displayName": "Admin Verify Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sccd",
+              "displayName": "sccd",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "userId",
+              "displayName": "userId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -3760,
+        1344
+      ],
+      "id": "d17f1454-0e26-44a9-81f8-a0faf6b7c701",
+      "name": "Append row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nreturn [{\n  json: {\n    tt_no:         d.ticket_no     || \"\",\n    severity:      d.severity      || \"\",\n    open_date:     d.fault_date    || \"\",\n    expected_date: d.expected_date || \"\",\n    technician:    d.technician    || \"\",\n    province:      d.province      || \"\",\n    go_time:       d.go_time       || \"\",\n    start_time:    d.start_time    || \"\",\n    done_time:     d.done_time     || \"\",\n    root_cause:    d.cause         || \"\",\n    repair_method: d.fix           || \"\",\n    image_url:     d.image_url     || \"\",\n    map_link:      d.map_link      || \"\",\n    userId:        d.userId        || \"\",\n    timeline:      d.timeline      || \"\",\n    location:      d.location      || \"\",\n\n    cm_report: d.timeline || \"\"\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4080,
+        1344
+      ],
+      "id": "6c2c270e-a418-4442-a54f-e579a6a968fa",
+      "name": "Prepare Sheet Data1"
+    },
+    {
+      "parameters": {
+        "content": "เเยกข้อมูล  img =? text ",
+        "height": 96,
+        "width": 230
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5104,
+        1712
+      ],
+      "typeVersion": 1,
+      "id": "d3c41092-e476-4bbc-94ed-0004312f2363",
+      "name": "Sticky Note43"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8b312f96-86b7-4373-b080-e7a1de464683",
+              "leftValue": "={{ $json.message.type }}",
+              "rightValue": "text",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -5120,
+        1360
+      ],
+      "id": "82a3726c-489c-4dd9-b310-2ac7abb2cdc4",
+      "name": "IF (Check Message Type)1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ดึงข้อความจาก LINE\nconst messageBody = $json.message?.text || $json.text || $json.full_text || \"\";\nconst text = messageBody.trim();\n\nif (!text) {\n  return {\n    json: {\n      ...$json,\n      status: \"NO_TEXT_FOUND\"\n    }\n  };\n}\n\n// ตัวแปรเก็บข้อมูล\nlet timeline = [];\nlet cause = \"\";\nlet fix = \"\";\n\nlet go_time = \"\";\nlet start_time = \"\";\nlet done_time = \"\";\n\nlet ticket_no = \"\";\nlet technician = \"\";\nlet province = \"\";\nlet location = \"\";\n\nlet fault_date = \"\";\nlet expected_date = \"\";\n\nlet severity = \"\";\n\n// ⭐ ต้องประกาศตรงนี้ก่อนใช้\nlet lat = \"\";\nlet lng = \"\";\n\nlet readCause = false;\nlet readFix = false;\nlet readTimeline = false;\n\nconst lines = text.split(\"\\n\");\n\nfor (const raw of lines) {\n\n  const line = raw.trim();\n  if (!line) continue;\n\n  // SECTION\n  if (/^cause/i.test(line)) {\n    readCause = true;\n    readFix = false;\n    readTimeline = false;\n    continue;\n  }\n\n  if (/^fix/i.test(line)) {\n    readFix = true;\n    readCause = false;\n    readTimeline = false;\n    continue;\n  }\n\n  if (/^timeline/i.test(line)) {\n    readTimeline = true;\n    readCause = false;\n    readFix = false;\n    continue;\n  }\n\n  // REGEX\n  const ticketMatch = line.match(/TT\\d+/i);\n\n  const goMatch = line.match(/go\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i);\n  const startMatch = line.match(/start\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i);\n  const doneMatch = line.match(/done\\s*time\\s*[:\\-]\\s*(\\d{1,2}[.:]\\d{2})/i);\n\n  const techMatch = line.match(/technician\\s*[:\\-]\\s*(.*)/i);\n  const provMatch = line.match(/province\\s*[:\\-]\\s*(.*)/i);\n\n  const faultMatch = line.match(/fault\\s*date\\s*[:\\-]\\s*(.*)/i);\n  const expMatch = line.match(/expected\\s*date\\s*[:\\-]\\s*(.*)/i);\n\n  // lat lng แบบตัวเลข\n  const locMatch = line.match(/(-?\\d+\\.\\d+)\\s*,\\s*(-?\\d+\\.\\d+)/);\n\n  // Google maps link\n  const mapLinkMatch = line.match(/@(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);\n  const mapQueryMatch = line.match(/[?&](?:q|ll)=(-?\\d+\\.\\d+),(-?\\d+\\.\\d+)/);\n\n  const sevMatch = line.match(/severity\\s*[:\\-]\\s*(\\S+)/i);\n\n  const isNewField = /^\\w+(\\s+\\w+)?\\s*[:\\-]/i.test(line);\n\n  // Ticket\n  if (ticketMatch) ticket_no = ticketMatch[0].toUpperCase();\n\n  // เวลา\n  if (goMatch) go_time = goMatch[1].replace(\".\", \":\");\n  if (startMatch) start_time = startMatch[1].replace(\".\", \":\");\n  if (doneMatch) done_time = doneMatch[1].replace(\".\", \":\");\n\n  // Technician\n  if (techMatch) technician = techMatch[1].trim();\n\n  // Province\n  if (provMatch) province = provMatch[1].trim();\n\n  // Fault date\n  if (faultMatch) {\n    fault_date = faultMatch[1].trim().split(\" \")[0];\n  }\n\n  // Expected date\n  if (expMatch) {\n    expected_date = expMatch[1].trim().split(\" \")[0];\n  }\n\n  // Lat Lng ตรงๆ\n  if (locMatch) {\n    lat = locMatch[1];\n    lng = locMatch[2];\n    location = `${lat},${lng}`;\n  }\n\n  // Google Maps @lat,lng\n  if (mapLinkMatch) {\n    lat = mapLinkMatch[1];\n    lng = mapLinkMatch[2];\n    location = `${lat},${lng}`;\n  }\n\n  // Google Maps ?q=lat,lng\n  if (mapQueryMatch) {\n    lat = mapQueryMatch[1];\n    lng = mapQueryMatch[2];\n    location = `${lat},${lng}`;\n  }\n\n  // severity\n  if (sevMatch) {\n    severity = sevMatch[1].toUpperCase();\n  }\n\n  // TIMELINE\n  if (/^\\d{1,2}[.:]\\d{2}/.test(line) || (readTimeline && !isNewField)) {\n    timeline.push(line);\n    continue;\n  }\n\n  // Cause\n  if (readCause && !isNewField) {\n    cause += line + \" \";\n  }\n\n  // Fix\n  if (readFix && !isNewField) {\n    fix += line + \" \";\n  }\n\n}\n\nreturn {\n  json: {\n    ...$json,\n\n    ticket_no,\n    fault_date,\n    expected_date,\n\n    technician,\n    province,\n\n    go_time,\n    start_time,\n    done_time,\n\n    location,\n    lat,\n    lng,\n\n    cause: cause.trim(),\n    fix: fix.trim(),\n\n    timeline: timeline.join(\"\\n\"),\n\n    severity: severity || \"\",\n\n    open_ticket: \"true\",\n    status: \"CLOSED\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4688,
+        1344
+      ],
+      "id": "6c389508-db41-4571-9f5b-956b021c4e61",
+      "name": "Parse close job1"
+    },
+    {
+      "parameters": {
+        "content": "ใช้เมื่อมีรูป",
+        "height": 144,
+        "width": 150,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4416,
+        1520
+      ],
+      "typeVersion": 1,
+      "id": "d725767a-bd14-4200-a611-9f3b80b51cac",
+      "name": "Sticky Note46"
+    },
+    {
+      "parameters": {
+        "content": "Mask",
+        "height": 192,
+        "width": 150,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3152,
+        -1088
+      ],
+      "typeVersion": 1,
+      "id": "aea1f0c7-8f62-4c57-85c7-6a2606cd5e85",
+      "name": "Sticky Note48",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "140YzcZqie9db0z2CR1W2xmessD_Pf8fbQB-kHI3lD1U",
+          "mode": "list",
+          "cachedResultName": "N8N-AUTO_M-n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/140YzcZqie9db0z2CR1W2xmessD_Pf8fbQB-kHI3lD1U/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2081129055,
+          "mode": "list",
+          "cachedResultName": "ปรับปรุงการดึงรหัส Region ใน n8n",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/140YzcZqie9db0z2CR1W2xmessD_Pf8fbQB-kHI3lD1U/edit#gid=2081129055"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tt no.": "={{ $json.tt_no }}",
+            "Region (Code)": "={{ $json.region_code }} ?",
+            "Severity": "={{ $json.severity }} ",
+            "OpenTicketDate": "={{ $json.open_date }}",
+            "ExpectedDate": "={{ $json.expected_date }}",
+            "Go Time": "={{ $json.go_time }}",
+            "Start Time": "={{ $json.start_time }}",
+            "Done Time": "={{ $json.done_time }}",
+            "Root Cause": "={{ $json.cause }}",
+            "Repair Method": "={{ $json.fix }}",
+            "Technician": "={{ $json.technician }}",
+            "CM report": "={{ $json.image_url }}"
+          },
+          "matchingColumns": [
+            "tt no."
+          ],
+          "schema": [
+            {
+              "id": "tt no.",
+              "displayName": "tt no.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Region (Code)",
+              "displayName": "Region (Code)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "OpenTicketDate",
+              "displayName": "OpenTicketDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ExpectedDate",
+              "displayName": "ExpectedDate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Go Time",
+              "displayName": "Go Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Start Time",
+              "displayName": "Start Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Done Time",
+              "displayName": "Done Time",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Root Cause",
+              "displayName": "Root Cause",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Repair Method",
+              "displayName": "Repair Method",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Technician",
+              "displayName": "Technician",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "CM report",
+              "displayName": "CM report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1808,
+        -912
+      ],
+      "id": "dc447e2b-d29c-4dd6-83f5-c710c95a3997",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "WoHKjUMsnt7MqePX",
+          "name": "Google Sheets account - UPDATE26-03-2026"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "=https://api-data.line.me/v2/bot/message/{{$json.events[0].message.id}}/content",
+        "sendHeaders": true,
+        "specifyHeaders": "=keypair",
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -2848,
+        -816
+      ],
+      "id": "17466717-757b-4b93-9c54-b5765f746ed0",
+      "name": "HTTP Request1",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "inputDataFieldName": "=data",
+        "name": "={{$now}}.jpg",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "=https://drive.google.com/drive/folders/1mLZqQPfs5U9V_Zb2ITU7bV6R2jKbl7re?usp=drive_link",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -4608,
+        1552
+      ],
+      "id": "e6d1116b-92ae-4b6b-ad7a-fc147422810b",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xZ5RqPJt53atBwji",
+          "name": "Google Drive account LAST"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "TODO: ทำให้ใส่ข้อมูลลงชีต \nโดยต้องมีรูปภาพ",
+        "height": 80,
+        "width": 230,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5104,
+        1632
+      ],
+      "typeVersion": 1,
+      "id": "d2d55957-18e4-48ec-a578-0726fd1a085f",
+      "name": "Sticky Note45"
+    },
+    {
+      "parameters": {
+        "content": "TODOProb : ส่งรูปเเล้วเข้า Node นี้เเล้วค้าง",
+        "height": 80,
+        "width": 310
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4432,
+        1696
+      ],
+      "typeVersion": 1,
+      "id": "354e1f2a-c5d2-461b-ab52-d047fbf6495e",
+      "name": "Sticky Note49"
+    },
+    {
+      "parameters": {
+        "content": "หาวิธีทำให้ ลง Sheet",
+        "height": 80,
+        "width": 214,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3936,
+        1840
+      ],
+      "typeVersion": 1,
+      "id": "3c26eadd-813b-4602-bd50-68ec7ceae4b6",
+      "name": "Sticky Note50"
+    },
+    {
+      "parameters": {
+        "content": "**Prepare Sheet Data1**\nแต่งชื่อฟิลด์ข้อมูลให้ตรงกับหัวตารางใน Google Sheets",
+        "height": 80,
+        "width": 214,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3760,
+        848
+      ],
+      "typeVersion": 1,
+      "id": "c2c13f3f-2d9c-4016-a6da-74227fc6744f",
+      "name": "Sticky Note51"
+    },
+    {
+      "parameters": {
+        "content": "**IF (Check Message Type)1**\nทำหน้าที่แยกประเภทข้อความ\n\nTRUE: ถ้าเป็น Text (ข้อความ): จะส่งไปประมวลผลเนื้อหา\n\nFalse: ถ้าเป็น Image (รูปภาพ): จะส่งไปดาวน์โหลดไฟล์รูป",
+        "height": 144,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6304,
+        1136
+      ],
+      "typeVersion": 1,
+      "id": "9f5f52bf-4095-4a54-b3d6-1562753ee861",
+      "name": "Sticky Note53"
+    },
+    {
+      "parameters": {
+        "content": "**Parse close job1** \nใช้ JavaScript Code เพื่อแกะข้อมูล (Regex) จากข้อความ",
+        "height": 128,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5888,
+        1152
+      ],
+      "typeVersion": 1,
+      "id": "e266ba5f-7c74-4c26-8c72-fe6e11457a86",
+      "name": "Sticky Note54"
+    },
+    {
+      "parameters": {
+        "content": "**Save Work Detail1**\nจัดระเบียบข้อมูลที่ Parse ได้ให้อยู่ในรูปแบบ Object ที่พร้อมใช้งาน\nใช้ JavaScript Code เพื่อแกะข้อมูล (Regex) จากข้อความ",
+        "height": 128,
+        "width": 422,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5504,
+        1152
+      ],
+      "typeVersion": 1,
+      "id": "fbd36a64-01e8-4521-b5a3-1cc686945664",
+      "name": "Sticky Note55"
+    },
+    {
+      "parameters": {
+        "content": "**Text Processing**",
+        "height": 208,
+        "width": 816
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5888,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "db8f6d64-0e30-440f-9bb4-d68cee2c8815",
+      "name": "Sticky Note42"
+    },
+    {
+      "parameters": {
+        "content": "**Trigger & Filter**",
+        "height": 208,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6544,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "24eb12a7-7f4b-46ff-8be8-57b1632ce95d",
+      "name": "Sticky Note44"
+    },
+    {
+      "parameters": {
+        "content": "**HTTP Request**\nยิงไปที่ LINE API (api-data.line.me) เพื่อดึงไฟล์ Binary ของรูปภาพออกมาโดยใช้ Message ID",
+        "height": 80,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5040,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "76f715ee-6b04-4a62-b9e6-fb768499c089",
+      "name": "Sticky Note56"
+    },
+    {
+      "parameters": {
+        "content": "**Upload file**\nนำรูปที่ได้ไปอัปโหลดเก็บไว้ในโฟลเดอร์บน Google Drive",
+        "height": 80,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4656,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "4034c9ef-1ab6-4562-864b-d01a9220c488",
+      "name": "Sticky Note57"
+    },
+    {
+      "parameters": {
+        "content": "**Image Handling**",
+        "height": 208,
+        "width": 1168
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -5040,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "c086d694-f7a8-482d-b39f-b136e5d8e8ea",
+      "name": "Sticky Note47"
+    },
+    {
+      "parameters": {
+        "content": "**Attach Ticket Image1**\nใช้ JavaScript เพื่อจับคู่ Link ของรูปภาพจาก Google Drive เข้ากับข้อมูล Ticket และเก็บ User ID ไว้",
+        "height": 80,
+        "width": 406,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4272,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "3569a25e-8a0c-4d28-b10a-bbae22bbe035",
+      "name": "Sticky Note58"
+    },
+    {
+      "parameters": {
+        "content": "**Prepare Sheet Data1**\nปรับแต่งชื่อฟิลด์ข้อมูลให้ตรงกับหัวตารางใน Google Sheets (เช่น เปลี่ยน ticket_no เป็น tt_no)",
+        "height": 80,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3824,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "51944d1e-4fc8-4a27-ad8e-3d16d0e44116",
+      "name": "Sticky Note59"
+    },
+    {
+      "parameters": {
+        "content": "**Format Message1**\nใช้ JavaScript สร้าง Template ข้อความภาษาไทยที่สวยงาม \n(มีเส้นกั้น ━━━━━━━━) เพื่อเตรียมส่งกลับไปใน LINE",
+        "height": 80,
+        "width": 390,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3440,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "103a10fa-87c7-4d11-bd27-ef24f2666737",
+      "name": "Sticky Note60"
+    },
+    {
+      "parameters": {
+        "content": "**Data Management & Storage**",
+        "height": 208,
+        "width": 1328
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3824,
+        1072
+      ],
+      "typeVersion": 1,
+      "id": "513ab8a3-dd4b-497a-bdd0-7503b203c94d",
+      "name": "Sticky Note61"
+    },
+    {
+      "parameters": {
+        "content": "**Append row in sheet1 (Google Sheets)**\nบันทึกข้อมูลทั้งหมดลงในไฟล์ Spreadsheet ที่ระบุไว้ (Sheet ID: 1SpkGa57u...) โดยมีการ Map ข้อมูลลง Column ต่างๆ เช่น Severity, Root Cause, และ Admin Name",
+        "height": 80,
+        "width": 566,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3056,
+        1200
+      ],
+      "typeVersion": 1,
+      "id": "3481122c-9c10-4c51-b2c8-a83776d11523",
+      "name": "Sticky Note62"
+    },
+    {
+      "parameters": {
+        "content": "**Line Messaging Trigger1**\nเป็นจุดเริ่มต้น (Trigger) \nที่รอรับ Event \"Message\" จาก LINE เมื่อมีคนส่งข้อความเข้ามา",
+        "height": 144,
+        "width": 246,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -6544,
+        1136
+      ],
+      "typeVersion": 1,
+      "id": "1b9ff7d2-35ab-4b36-8723-02334c74d201",
+      "name": "Sticky Note52"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nconst message = `\n📌 Ticket No: ${d.tt_no || \"-\"}\n⚠️ Severity: ${d.severity || \"-\"}\n👨‍🔧 Technician: ${d.technician || \"-\"}\n📍 Province: ${d.province || \"-\"}\n\n📅 Fault Date: ${d.open_date || \"-\"}\n📅 Expected: ${d.expected_date || \"-\"}\n\n🕒 Go Time: ${d.go_time || \"-\"}\n🕒 Start Time: ${d.start_time || \"-\"}\n🕒 Done Time: ${d.done_time || \"-\"}\n\n🔎 Cause:\n${d.root_cause || \"-\"}\n\n🛠 Fix:\n${d.repair_method || \"-\"}\n\n📷 Image:\n${d.image_url || \"-\"}\n\n🗺 Map:\n${d.map_link || \"-\"}\n`;\n\nreturn [{ json: { message } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3936,
+        1680
+      ],
+      "id": "09f6ec80-509a-49a8-850e-5506bb0926c7",
+      "name": "Format Message.old"
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $json;\n\nconst message = `\n📌 Ticket No : ${d.tt_no || \"-\"}\n\n⚠️ Severity : ${d.severity || \"-\"}\n\n👨‍🔧 Technician : ${d.technician || \"-\"}\n📍 Province : ${d.province || \"-\"}\n\n📅 Fault Date : ${d.open_date || \"-\"}\n📅 Expected : ${d.expected_date || \"-\"}\n\n🕒 Go Time : ${d.go_time || \"-\"}\n🕒 Start Time : ${d.start_time || \"-\"}\n🕒 Done Time : ${d.done_time || \"-\"}\n\n🔎 Cause\n${d.root_cause || \"-\"}\n\n📄 Report:\n${d.cm_report || \"-\"}\n\n🛠Fix\n${d.repair_method || \"-\"}\n\n🕘 Timeline\n${d.timeline || \"-\"}\n\n📍 Map\n${d.map_link || \"-\"}\n`;\n\nconsole.log($json);\n\nreturn [\n{\njson:{\nmessage\n}\n}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3920,
+        1344
+      ],
+      "id": "4aec9b5c-837f-4085-8fff-a56508ebadca",
+      "name": "Format Message1"
+    },
+    {
+      "parameters": {
+        "content": "V2",
+        "height": 4192,
+        "width": 5120,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1168,
+        -2432
+      ],
+      "typeVersion": 1,
+      "id": "31f85f1a-5f75-4a66-8fd6-8e113338aa26",
+      "name": "Sticky Note24"
+    },
+    {
+      "parameters": {
+        "content": "V1",
+        "height": 1344,
+        "width": 2704,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -4064,
+        -1696
+      ],
+      "typeVersion": 1,
+      "id": "5bb83e9f-5890-4e56-9de6-8b9b2c52a701",
+      "name": "Sticky Note32"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -6192,
+        1696
+      ],
+      "id": "618a4cb9-05de-4fee-82a4-33bbd3704fa4",
+      "name": "Telegram Trigger",
+      "webhookId": "de305699-ad07-44c4-a4e5-294257019013",
+      "credentials": {
+        "telegramApi": {
+          "id": "yWwJXtjuz3QdC3Yx",
+          "name": "SYS-TELEG account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6137906516",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -5616,
+        1696
+      ],
+      "id": "d54585be-cc23-463f-86cd-082e09acf89b",
+      "name": "Send a text message",
+      "webhookId": "23c177a6-2d4d-442a-a225-fb41198808c9",
+      "credentials": {
+        "telegramApi": {
+          "id": "yWwJXtjuz3QdC3Yx",
+          "name": "SYS-TELEG account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=RERLY THIS IN THAI :  {{ $json.message.text }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -5984,
+        1696
+      ],
+      "id": "b26075b0-69a9-4596-8e2e-c65102a55520",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -6016,
+        1904
+      ],
+      "id": "e46ad315-082a-4790-9de1-fdbbd04b5e19",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "WuOAgQNbBp0HiPws",
+          "name": "Google Gemini(PaLM) - UPDATE23-02-2026"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Auto Repair JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging Trigger": {
+      "main": [
+        [
+          {
+            "node": "IF (Check Message Type)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        []
+      ]
+    },
+    "Tools Sheet": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "IF - Query Mode": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code ViewError",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge User": {
+      "main": [
+        [
+          {
+            "node": "Parse Final JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Final JSON": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in Google Sheets": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Ticket Data": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code ViewError": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging SendError1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging SendError1": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Normalize Ticket Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Work Detail": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Ticket Image": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "IF - Query Mode",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ],
+        []
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Merge User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        []
+      ]
+    },
+    "Debug SW": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto Repair JSON": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Prepare Sheet Data": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Message": {
+      "main": [
+        [
+          {
+            "node": "Save Work Detail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (Check Message Type)": {
+      "main": [
+        [
+          {
+            "node": "Parse close job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        []
+      ]
+    },
+    "Google map(Field)": {
+      "main": [
+        [
+          {
+            "node": "Format Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse close job": {
+      "main": [
+        [
+          {
+            "node": "Google map(Field)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging Trigger1": {
+      "main": [
+        [
+          {
+            "node": "IF (Check Message Type)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Work Detail1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Sheet Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Ticket Image1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Sheet Data1": {
+      "main": [
+        [
+          {
+            "node": "Format Message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF (Check Message Type)1": {
+      "main": [
+        [
+          {
+            "node": "Parse close job1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse close job1": {
+      "main": [
+        [
+          {
+            "node": "Save Work Detail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Attach Ticket Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "Attach Ticket Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging2": {
+      "main": [
+        []
+      ]
+    },
+    "Format Message.old": {
+      "main": [
+        []
+      ]
+    },
+    "Format Message1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "dynamic",
+    "timezone": "Asia/Bangkok",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 20
+  },
+  "versionId": "d840385b-a27d-4e7d-a35c-8e1d0756f089",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "05944909a8ccb3ffdf59c45978efdd311c90ab3658ab8e0fd81f135870dfea78"
+  },
+  "id": "oikQfVsrbi54d6iO",
+  "tags": []
+}
