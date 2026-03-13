@@ -1,8 +1,8 @@
 // ============================================================
 // 1. CONFIGURATION
 // ============================================================
-const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-1003731290917"; 
+const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
+const CHAT_ID = "-one003731290917"; 
 const LOW_STOCK_LIMIT = 1;
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyR3KwNBJLTsbHbdM0N3u-ZP5IIDZuXPZ66v6myI2QPVEuQQGIL2r2WWe8UeCMzbspP/exec"; // UPDATE ด้วยหลังอัพโค้ด
 
@@ -359,3 +359,4 @@ function onEdit(e) {
     sendTelegram(CHAT_ID, msg);
   }
 }
+
