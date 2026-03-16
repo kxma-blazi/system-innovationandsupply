@@ -318,3 +318,44 @@ msg += `🕒 ${date}
 return msg;
 
 }
+
+// ฟังก์ชันนี้จะทำงานอัตโนมัติเมื่อมีการแก้ไขเซลล์ใน Google Sheets
+function onEdit(e) {
+  const range = e.range;
+  const sheet = range.getSheet();
+  const sheetName = sheet.getName();
+  
+  // ตรวจสอบว่าแก้ในชีต STOCK และไม่ใช่แถวหัวข้อ
+  if (sheetName === "STOCK" && range.getRow() > 1) {
+    
+    const row = range.getRow();
+    const col = range.getColumn();
+    
+    // ดึงค่าใหม่ และ ค่าเก่า
+    const newValue = e.value || "ถูกลบ/ว่างเปล่า";
+    const oldValue = e.oldValue || "ไม่มีข้อมูลเดิม";
+    
+    // ดึงชื่อสินค้า (คอลัมน์ C) และรหัส (คอลัมน์ B) มาแสดงเพื่อให้รู้ว่าแก้ที่รายการไหน
+    const materialCode = sheet.getRange(row, 2).getValue(); // คอลัมน์ B (Material Code)
+    const description = sheet.getRange(row, 3).getValue();  // คอลัมน์ C (Description)
+    
+    // แปลงเลขคอลัมน์เป็นชื่อหัวข้อ (Header)
+    const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const colName = headers[col - 1] || "ไม่ทราบคอลัมน์";
+
+    // สร้างข้อความแจ้งเตือน
+    let msg = `📝 <b>มีการแก้ไขข้อมูลในชีต</b>\n`;
+    msg += `━━━━━━━━━━━━━━━\n`;
+    msg += `📍 <b>ตำแหน่ง:</b> แถวที่ ${row} [${colName}]\n`;
+    msg += `🔖 <b>ID: Q0</b>${materialCode}\n`;
+    msg += `📦 <b> Description:</b> ${description}\n`;
+    msg += `━━━━━━━━━━━━━━━\n`;
+    msg += `❌ <b>ค่าเดิม:</b> ${oldValue}\n`;
+    msg += `✅ <b>เปลี่ยนเป็น:</b> <b>${newValue}</b>\n`;
+    msg += `━━━━━━━━━━━━━━━\n`;
+    msg += `👤 <b>โดย:</b> Admin (Manual Edit)`;
+
+    // เรียกฟังก์ชันส่ง Telegram (ต้องมีฟังก์ชัน sendTelegram ในสคริปต์ด้วย)
+    sendTelegram(CHAT_ID, msg);
+  }
+}
