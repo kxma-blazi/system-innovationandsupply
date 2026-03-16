@@ -2,7 +2,7 @@
 // 1. CONFIGURATION
 // ============================================================
 const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-1003731290917"; 
+const CHAT_ID = "-100373129091SEVEN"; 
 const LOW_STOCK_LIMIT = 1;
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw4F_rnJrQmzQSZMBsNKVHLncWWmAzI3_qiodVaDOf6GkTo1XeAOFxXZQQSwyjF7ZGg/exec";
 
