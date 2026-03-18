@@ -1,8 +1,8 @@
 // ============================================================
 // 1. CONFIGURATION
 // ============================================================
-const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-One003731290917"; 
+const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
+const CHAT_ID = "-1003731290917"; 
 const LOW_STOCK_LIMIT = 1;
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5KR2d8ukXl0DVUAj8Lo11JQ8F00vL-ax7pkqRbDeSv1NTLNIRy094narUUyz_TbXH/exec";
 
@@ -43,6 +43,12 @@ function doPost(e) {
         sendStockPage(chatId, page);
         answerCallback(callbackId);
         return;
+      }
+
+      else if (callbackData === "/menu") {
+      sendControlPanel(chatId);
+      answerCallback(callbackId);
+      return;
       }
 
       else if (callbackData === "/lowstock") {
@@ -398,9 +404,9 @@ function sendStockPage(chatId, page = 1) {
 function topWithdraw() {
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("LOGS");
+  const sheet = ss.getSheetByName("Logs");
 
-  if (!sheet) return "❌ ไม่พบชีต LOGS";
+  if (!sheet) return "❌ ไม่พบชีต Logs";
 
   const data = sheet.getDataRange().getValues();
 
@@ -563,8 +569,8 @@ return `
 
 function history(){
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("LOGS");
-  if(!sheet) return "❌ ไม่พบชีต LOGS";
+  const sheet = ss.getSheetByName("Logs");
+  if(!sheet) return "❌ ไม่พบชีต Logs";
   const data = sheet.getDataRange().getValues();
   let msg = "📜 <b>Stock History (10 รายการล่าสุด)</b>\n\n";
   let start = Math.max(1, data.length - 10);
@@ -582,7 +588,7 @@ function history(){
 function sendDailySummary() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const stockSheet = ss.getSheetByName("STOCK");
-  const logSheet = ss.getSheetByName("LOGS");
+  const logSheet = ss.getSheetByName("Logs");
   if (!stockSheet || !logSheet) return;
 
   const stockData = stockSheet.getDataRange().getValues();
@@ -613,7 +619,7 @@ function sendDailySummary() {
   sendTelegram(CHAT_ID, msg);
 }
 
-function onEdit(e) {
+function onEdit(e) { // จับ edit
 
   const range = e.range;
   const sheet = range.getSheet();
