@@ -1,10 +1,14 @@
 // ============================================================
 // 1. CONFIGURATION
 // ============================================================
-const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s"; // API Token Telegtram
-const CHAT_ID = "-ONE003731290917"; // ID Group Telegram
-const LOW_STOCK_LIMIT = 1; // ตั้งสินค้าต่ำสุด เพื่อเเจ้งเตือน
+const TELEGRAM_TOKEN = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
+const CHAT_ID = "-1003731290917"; 
+const LOW_STOCK_LIMIT = 1;
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5KR2d8ukXl0DVUAj8Lo11JQ8F00vL-ax7pkqRbDeSv1NTLNIRy094narUUyz_TbXH/exec";
+
+// ============================================================
+// 2. CORE SYSTEM (Support ทั้งพิมพ์ และ กดปุ่ม)
+// ============================================================
 
 // ============================================================
 // 2. CORE SYSTEM (Support ทั้งพิมพ์ และ กดปุ่ม)
@@ -15,15 +19,12 @@ function doPost(e) {
     if (!e || !e.postData) return;
     const data = JSON.parse(e.postData.contents);
 
-    // 1️⃣ CALLBACK BUTTON
+    // 1️⃣ CALLBACK BUTTON (เมื่อผู้ใช้กดปุ่ม Inline Keyboard)
     if (data.callback_query) {
       const callbackData = data.callback_query.data;
       const callbackId = data.callback_query.id;
       if (!data.callback_query.message) return;
       const chatId = data.callback_query.message.chat.id;
-
-      const adminName = data.callback_query.from.first_name || data.callback_query.from.username || "Unknown";
-
       let responseText = "";
 
       if (callbackData === "/allstock") {
@@ -53,64 +54,89 @@ function doPost(e) {
       else if (callbackData === "/history") { responseText = history(); } 
       else if (callbackData === "/help") { responseText = helpMenu(); }
 
-      if (responseText) { 
-        // รวมข้อความรายงาน + ชื่อแอดมิน เข้าด้วยกันก่อนส่ง
-        const finalMsg = responseText + `\n\n👤 <b>ดำเนินการโดย:</b> ${adminName}`;
-        
-        sendTelegram(chatId, finalMsg); 
-      }
-      
-      answerCallback(callbackId); // แจ้ง Telegram ว่ารับทราบการกดปุ่มแล้ว (ลดอาการปุ่มค้าง)
+      if (responseText) { sendTelegram(chatId, responseText); }
+      answerCallback(callbackId);
       return;
     }
-    // 2️⃣ TEXT COMMAND
+
+    // 2️⃣ TEXT COMMAND (เมื่อผู้ใช้พิมพ์ข้อความหรือกดคำสั่งจากเมนู)
     if (!data.message || !data.message.text) return;
     const chatId = data.message.chat.id;
     const text = data.message.text;
     const user = data.message.from.first_name || data.message.from.username || "Unknown";
+    
+    // ตัดคำสั่งให้เป็นตัวเล็ก และตัดชื่อบอทออก (เช่น /report@mybot -> /report)
     let cmd = text.split(" ")[0].toLowerCase();
     if (cmd.includes("@")) { cmd = cmd.split("@")[0]; }
     const args = text.split(" ");
 
     switch (cmd) {
       case "/exportpdf": 
-      sendTelegram(chatId, "📄 กำลังสร้าง PDF..."); 
-      exportStockPDF(chatId); 
-      break;
+        sendTelegram(chatId, "📄 กำลังสร้าง PDF..."); 
+        exportStockPDF(chatId); 
+        break;
 
       case "/start":
       case "/menu":
-      sendControlPanel(chatId);
-      break;
+        sendControlPanel(chatId);
+        break;
+
       case "/help":
       case "/manual":
-      sendTelegram(chatId, helpMenu());
-      sendControlPanel(chatId); break;
-      case "/history": sendTelegram(chatId, history()); break;
-      case "/report": sendTelegram(chatId, report()); break;
-      case "/stock": sendTelegram(chatId, getStock(args[1])); break;
-      case "/search": sendTelegram(chatId, searchStock(args.slice(1).join(" "))); break;
+        sendTelegram(chatId, helpMenu());
+        sendControlPanel(chatId); 
+        break;
+
+      case "/history": 
+        sendTelegram(chatId, history()); 
+        break;
+
+      case "/report": 
+        // สั่งให้ทำสรุปรายงาน แล้วดึงข้อความมาส่งให้ user
+        let reportMsg = report(); 
+        sendTelegram(chatId, reportMsg); 
+        break;
+
+      case "/stock": 
+        sendTelegram(chatId, getStock(args[1])); 
+        break;
+
+      case "/search": 
+        sendTelegram(chatId, searchStock(args.slice(1).join(" "))); 
+        break;
+
       case "/allstock": 
         let page = args[1] ? Number(args[1]) : 1;
         sendStockPage(chatId, isNaN(page) ? 1 : page); 
         break;
-      case "/lowstock": sendTelegram(chatId, lowStock()); break;
-      case "/restock": sendTelegram(chatId, restock(args[1], Number(args[2]), user)); break;
-      case "/topwithdraw": sendTelegram(chatId, topWithdraw()); break;
+
+      case "/lowstock": 
+        sendTelegram(chatId, lowStock()); 
+        break;
+
+      case "/restock": 
+        sendTelegram(chatId, restock(args[1], Number(args[2]), user)); 
+        break;
+
+      case "/topwithdraw": 
+        sendTelegram(chatId, topWithdraw()); 
+        break;
+
       case "/dp-cbr": sendTelegram(chatId, withdraw(args[1], Number(args[2]), 5, "CBR", user)); break;
       case "/dp-ccs": sendTelegram(chatId, withdraw(args[1], Number(args[2]), 6, "CCS", user)); break;
       case "/dp-sko": sendTelegram(chatId, withdraw(args[1], Number(args[2]), 7, "SKO", user)); break;
       case "/dp-ryg": sendTelegram(chatId, withdraw(args[1], Number(args[2]), 8, "RYG", user)); break;
       case "/dp-trt": sendTelegram(chatId, withdraw(args[1], Number(args[2]), 9, "TRT", user)); break;
+
       default:
-        // ถ้าขึ้นต้นด้วย / แต่หาเคสไม่เจอ (เช่น พิมพ์ผิด หรือลืมใส่ใน case)
+        // ถ้าขึ้นต้นด้วย / แต่หาคำสั่งไม่เจอ (พิมพ์ผิด)
         if (cmd.startsWith("/")) {
-          sendTelegram(chatId, "❌ ไม่รู้จักคำสั่งนี้ครับ\nลองพิมพ์ <code>/menu</code> เพื่อดูรายการทั้งหมด");
-          // แถม: ส่งเมนูให้เขาเลย เขาจะได้กดปุ่มแทนการพิมพ์
+          sendTelegram(chatId, "❌ ไม่รู้จักคำสั่งนี้ครับ\nลองเลือกจากเมนูด้านล่างนี้ดูนะครับ 👇");
+          // ส่งเมนูหลักให้เขาเลย จะได้กดปุ่มแทน
           sendControlPanel(chatId); 
         }
-        break; // ควรใส่ break ปิดท้าย default ด้วยครับ
-    } // ปิด switch
+        break;
+    }
 
   } catch (err) {
     Logger.log("Error in doPost: " + err.toString());
@@ -135,7 +161,7 @@ function sendControlPanel(chatId) {
     "chat_id": chatId ? chatId.toString() : CHAT_ID,
     "text": "🎮 <b>SYSTEM INNOVATION AND SUPPLY</b>\n\nเลือกรายการที่ต้องการจัดการด้านล่างครับ:",
     "parse_mode": "HTML",
-    "reply_markup": keyboard 
+    "reply_markup": JSON.stringify(keyboard) 
   };
   UrlFetchApp.fetch(url, { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload), "muteHttpExceptions": true });
 }
@@ -152,71 +178,8 @@ function sendTelegram(chatId, msg) {
 }
 
 // ============================================================
-// 4. STOCK LOGIC (ฉบับแก้ไขลงคอลัมน์ K - ช่องที่ 11)
-// ============================================================
-
-function getSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("STOCK"); }
-
-function restock(code, qty, user) {
-  if (!code || isNaN(qty) || qty <= 0) return "⚠️ รูปแบบผิด: /restock [CODE] [QTY]";
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === code.toLowerCase()) {
-      let newQty = (Number(data[i][4]) || 0) + qty;
-      
-      // อัปเดต QTY (คอลัมน์ E)
-      sheet.getRange(i + 1, 5).setValue(newQty);
-      
-      // 🌟 เขียนสถานะลง Alert (คอลัมน์ K คือเลข 11)
-      let statusText = "✅ ปกติ";
-      if (newQty === 0) statusText = "🚨 หมดสต็อก";
-      else if (newQty <= LOW_STOCK_LIMIT) statusText = "⚠️ ใกล้หมด";
-      sheet.getRange(i + 1, 11).setValue(statusText); 
-      
-      writeLog(user, "Restock", data[i][0], qty, "Center", newQty);
-      notifyActivity("เติมสินค้า | Restock", data[i][0], "IN", qty, newQty, "", user);
-      return `✅ <b>Restock Success</b>\n📦 ${data[i][2]}\n👤 โดย: ${user}\n📊 Stock ใหม่: ${newQty}`;
-    }
-  }
-  return "❌ ไม่พบรหัสสินค้า";
-}
-
-function withdraw(code, qty, colIndex, deptName, user) {
-  if (!code || isNaN(qty) || qty <= 0) return `⚠️ รูปแบบผิด: /dp-xxx [CODE] [QTY]`;
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === code.toLowerCase()) {
-      let currentStock = Number(data[i][4]) || 0;
-      if (currentStock < qty) return `❌ <b>สต็อกไม่พอ!</b>\nคงเหลือ: ${currentStock}`;
-      
-      let newStock = currentStock - qty;
-      let newDeptTotal = (Number(data[i][colIndex]) || 0) + qty;
-      
-      // อัปเดตคงเหลือ (คอลัมน์ E)
-      sheet.getRange(i + 1, 5).setValue(newStock); 
-      
-      // 🌟 เขียนสถานะลง Alert (คอลัมน์ K คือเลข 11)
-      let statusText = "✅ ปกติ";
-      if (newStock === 0) statusText = "🚨 หมดสต็อก";
-      else if (newStock <= LOW_STOCK_LIMIT) statusText = "⚠️ ใกล้หมด";
-      sheet.getRange(i + 1, 11).setValue(statusText);
-
-      sheet.getRange(i + 1, colIndex + 1).setValue(newDeptTotal);
-      writeLog(user, "Withdraw", data[i][0], qty, deptName, newStock);
-      notifyActivity(`เบิกสินค้า (${deptName})`, data[i][0], "OUT", qty, newStock, deptName, user);
-      return `✅ <b>Success (${deptName})</b>\n📦 ${data[i][2]}\n👤 โดย: ${user}\n📉 เหลือ: ${newStock}`;
-    }
-  }
-  return "❌ ไม่พบรหัสสินค้า";
-}
-
-/*
-// ============================================================
 // 4. STOCK LOGIC
 // ============================================================
-
 
 function getSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("STOCK"); }
 
@@ -269,114 +232,6 @@ function notifyActivity(title, code, type, qty, remain, dept = "", user = "") {
   let msg = `📌 <b>${title}</b>\n━━━━━━━━━━━━━━━━\n🆔 <b>รหัส:</b> <code>${code}</code>\n📝 <b>สถานะ:</b> ${statusEmoji}\n🔢 <b>จำนวน:</b> ${mathSign} <b>${qty}</b>\n`;
   if (dept) msg += `🏢 <b>แผนก:</b> ${dept}\n`;
   msg += `👤 <b>โดย:</b> ${user}\n━━━━━━━━━━━━━━━━\n📊 <b>คงเหลือ:</b> <b><u>${remain}</u></b> หน่วย`;
-  sendTelegram(CHAT_ID, msg);
-}
-*/
-
-// ============================================================
-// 4. STOCK LOGIC (ฉบับพิมพ์สถานะลงชีตในตัว)
-// ============================================================
-
-function getSheet() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("STOCK"); }
-
-function restock(code, qty, user) {
-  if (!code || isNaN(qty) || qty <= 0) return "⚠️ รูปแบบผิด: /restock [CODE] [QTY]";
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === code.toLowerCase()) {
-      let newQty = (Number(data[i][4]) || 0) + qty;
-      
-      // 1. อัปเดตจำนวนสต็อก (คอลัมน์ E)
-      sheet.getRange(i + 1, 5).setValue(newQty);
-      
-      // 🌟 2. เขียนสถานะลงคอลัมน์ J (คอลัมน์ 10)
-      let statusText = "✅ ปกติ";
-      if (newQty === 0) statusText = "🚨 หมดสต็อก";
-      else if (newQty <= LOW_STOCK_LIMIT) statusText = "⚠️ ใกล้หมด";
-      sheet.getRange(i + 1, 10).setValue(statusText);
-      
-      writeLog(user, "Restock", data[i][0], qty, "Center", newQty);
-      notifyActivity("เติมสินค้า | Restock", data[i][0], "IN", qty, newQty, "", user);
-      return `✅ <b>Restock Success</b>\n📦 ${data[i][2]}\n👤 โดย: ${user}\n📊 Stock ใหม่: ${newQty}`;
-    }
-  }
-  return "❌ ไม่พบรหัสสินค้า";
-}
-
-function withdraw(code, qty, colIndex, deptName, user) {
-  if (!code || isNaN(qty) || qty <= 0) return `⚠️ รูปแบบผิด: /dp-xxx [CODE] [QTY]`;
-  const sheet = getSheet();
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][0].toString().toLowerCase() === code.toLowerCase()) {
-      let currentStock = Number(data[i][4]) || 0;
-      if (currentStock < qty) return `❌ <b>สต็อกไม่พอ!</b>\nคงเหลือ: ${currentStock}`;
-      
-      let newStock = currentStock - qty;
-      let newDeptTotal = (Number(data[i][colIndex]) || 0) + qty;
-      
-      // 1. อัปเดตจำนวนคงเหลือ (คอลัมน์ E)
-      sheet.getRange(i + 1, 5).setValue(newStock); 
-      
-      // 🌟 2. เขียนสถานะลงคอลัมน์ J (คอลัมน์ 10)
-      let statusText = "✅ ปกติ";
-      if (newStock === 0) statusText = "🚨 หมดสต็อก";
-      else if (newStock <= LOW_STOCK_LIMIT) statusText = "⚠️ ใกล้หมด";
-      sheet.getRange(i + 1, 10).setValue(statusText);
-
-      // 3. อัปเดตยอดเบิกสะสมของแผนก
-      sheet.getRange(i + 1, colIndex + 1).setValue(newDeptTotal);
-      
-      writeLog(user, "Withdraw", data[i][0], qty, deptName, newStock);
-      notifyActivity(`เบิกสินค้า (${deptName})`, data[i][0], "OUT", qty, newStock, deptName, user);
-      return `✅ <b>Success (${deptName})</b>\n📦 ${data[i][2]}\n👤 โดย: ${user}\n📉 เหลือ: ${newStock}`;
-    }
-  }
-  return "❌ ไม่พบรหัสสินค้า";
-}
-
-function writeLog(user, action, code, detail, sheetName, remain) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let logSheet = ss.getSheetByName("Logs");
-  if (!logSheet) return;
-  logSheet.appendRow([new Date(), user, action, code, detail, sheetName, remain]);
-}
-
-function notifyActivity(title, code, type, qty, remain, dept = "", user = "") {
-  
-  // ==========================================
-  // 1. DATA PREPARATION (เตรียมข้อมูล)
-  // ==========================================
-  // ส่วนนี้ทำหน้าที่คำนวณหรือแปลงค่าดิบ (Raw Data) ให้กลายเป็นค่าที่พร้อมแสดงผล
-  const isIncoming = (type === "IN");
-  const statusEmoji = isIncoming ? "🟢 [ เติมเข้า ]" : "🟠 [ เบิกออก ]";
-  const mathSign    = isIncoming ? "➕" : "➖";
-  const userName    = user || "Staff"; // ถ้าไม่มีชื่อให้ขึ้นว่า Staff
-
-  // ==========================================
-  // 2. MESSAGE CONSTRUCTION (สร้างข้อความ)
-  // ==========================================
-  // ส่วนนี้ทำหน้าที่ประกอบข้อความ (Template) เข้าด้วยกันตามลำดับที่ต้องการ
-  let msg = `📌 <b>${title}</b>\n` +
-            `━━━━━━━━━━━━━━━━\n` +
-            `🆔 <b>รหัส:</b> <code>${code}</code>\n` +
-            `📝 <b>สถานะ:</b> ${statusEmoji}\n` +
-            `🔢 <b>จำนวน:</b> ${mathSign} <b>${qty}</b>\n`;
-
-  // เงื่อนไขพิเศษ: ถ้ามีแผนก ค่อยเพิ่มบรรทัดนี้ (Conditional Content)
-  if (dept) {
-    msg += `🏢 <b>แผนก:</b> ${dept}\n`;
-  }
-
-  msg += `👤 <b>โดย:</b> ${userName}\n` +
-         `━━━━━━━━━━━━━━━━\n` +
-         `📊 <b>คงเหลือ:</b> <b><u>${remain}</u></b> หน่วย`;
-
-  // ==========================================
-  // 3. EXECUTION / DELIVERY (การส่งออก)
-  // ==========================================
-  // ส่วนสุดท้ายคือการนำข้อความที่สร้างเสร็จแล้ว ส่งไปยังเป้าหมาย (Telegram)
   sendTelegram(CHAT_ID, msg);
 }
 
@@ -488,7 +343,7 @@ function setWebhook() {
 // ============================================================
 // 7. TRIGGERS (onEdit - ปรับปรุงเพื่อรองรับหลายชีต)
 // ============================================================
-/*
+
 function onEdit(e) {
   try {
     const sheet = e.range.getSheet();
@@ -535,144 +390,26 @@ function onEdit(e) {
     Logger.log("Error: " + err.toString());
   }
 }
-*/
 
-// ============================================================
-// 7. TRIGGERS (ปรับปรุงให้แจ้งเตือนเมื่อค่าเป็น 0)
-// ============================================================
-/*
-function onEdit(e) {
-  try {
-    const sheet = e.range.getSheet();
-    const sheetName = sheet.getName();
-    const row = e.range.getRow();
-    const col = e.range.getColumn();
-    
-    // 1. ยกเว้นเฉพาะชีต "Logs"
-    if (sheetName === "Logs") return;
 
-    // 2. ดึงข้อมูลผู้ใช้งานและค่าที่เปลี่ยนแปลง
-    // หมายเหตุ: Session.getActiveUser() จะดึงเมลได้เฉพาะเจ้าของชีต 
-    // ถ้าอยากได้เมลคนอื่นด้วย ต้องเปลี่ยนชื่อ function เป็น trackEdit และตั้ง Trigger ตามที่เคยแนะนำครับ
-    const user = Session.getActiveUser().getEmail() || "Staff / User";
-    const oldValue = e.oldValue || "ว่าง/ไม่มีข้อมูลเดิม";
-    const newValue = e.value || "ถูกลบ/ค่าว่าง";
+function checkLowStockAlert(row) {
+  const sheet = getSheet();
+  const rowData = sheet.getRange(row, 1, 1, 5).getValues()[0];
+  const code = rowData[1]; // คอลัมน์ B
+  const desc = rowData[2]; // คอลัมน์ C
+  const qty = Number(rowData[4]); // คอลัมน์ E
 
-    if (oldValue == newValue) return;
-
-    // 3. ดึงข้อมูลหัวตาราง (Header)
-    const headerName = sheet.getRange(1, col).getValue() || "คอลัมน์ที่ " + col;
-
-    // 4. ดึงข้อมูลอ้างอิง (3 คอลัมน์แรก)
-    const referenceData = sheet.getRange(row, 1, 1, 3).getValues()[0];
-    const refText = referenceData.filter(String).join(" | ") || "ไม่พบข้อมูลอ้างอิง";
-
-    // 5. บันทึก Log ลงชีต Logs
-    if (typeof writeLog === 'function') {
-      writeLog(user, `Edit [${sheetName}]`, refText, `${headerName}: ${oldValue} -> ${newValue}`, sheetName, "N/A");
-    }
-
-    // 🌟 6. เช็กเงื่อนไขพิเศษ: ถ้าค่าใหม่เป็น 0 (ของหมด)
-    let alertHeader = `🔔 <b>แจ้งเตือนการแก้ไข [${sheetName}]</b>`;
-    if (newValue == 0 || newValue == "0") {
-      alertHeader = `🚨 <b>[ ALERT: ของหมดสต็อก! ]</b>\nในชีต [${sheetName}]`;
-    }
-
-    // 7. ส่งข้อความเข้า Telegram
-    let msg = `${alertHeader}\n`;
+  if (qty <= LOW_STOCK_LIMIT) {
+    let msg = `🚨 <b>LOW STOCK ALERT</b>\n`;
     msg += `━━━━━━━━━━━━━━━━\n`;
-    msg += `📍 <b>ตำแหน่ง:</b> แถว ${row} | ${headerName}\n`;
-    msg += `📦 <b>รายการ:</b> <code>${refText}</code>\n`;
-    msg += `❌ <b>เดิม:</b> ${oldValue}\n`;
-    msg += `✅ <b>ใหม่:</b> <b>${newValue}</b>\n`;
-    msg += `👤 <b>แก้ไขโดย:</b> ${user}\n`;
+    msg += `🔖 <b>Code:</b> <code>${code}</code>\n`;
+    msg += `📦 <b>Item:</b> ${desc}\n`;
+    msg += `⚠️ <b>คงเหลือ:</b> <b>${qty}</b> หน่วย\n`;
     msg += `━━━━━━━━━━━━━━━━`;
-
     sendTelegram(CHAT_ID, msg);
-
-  } catch (err) {
-    Logger.log("Error: " + err.toString());
   }
 }
-*/
 
-// ============================================================
-// 7. TRIGGERS (onEdit ปรับปรุงให้ลงคอลัมน์ K อัตโนมัติ)
-// ============================================================
-
-function onEdit(e) {
-  try {
-    const sheet = e.range.getSheet();
-    const sheetName = sheet.getName();
-    const row = e.range.getRow();
-    const col = e.range.getColumn();
-    
-    // 1. ยกเว้นเฉพาะชีต "Logs"
-    if (sheetName === "Logs") return;
-
-    // 2. ดึงข้อมูลผู้ใช้งานและค่าที่เปลี่ยนแปลง
-    const user = Session.getActiveUser().getEmail() || "Staff / User";
-    const oldValue = e.oldValue || "ว่าง";
-    const newValue = e.value || "0";
-
-    if (oldValue == newValue) return;
-
-    // 🌟 3. ส่วนที่แก้ไข: เช็กทุกแถวในชีต STOCK เมื่อมีการแก้คอลัมน์ E (คอลัมน์ที่ 5)
-    if (sheetName === "STOCK" && col === 5) {
-      const ALERT_COL = 11; // คอลัมน์ K (ช่อง Alert สีส้ม)
-      const qty = Number(newValue);
-      let statusText = "✅ ปกติ";
-      
-      // ตรวจสอบเงื่อนไข LOW_STOCK_LIMIT (ระบบจะอัปเดตคอลัมน์ K ให้ทุกแถวที่พี่ไปพิมพ์เลข)
-      if (qty === 0 || newValue === "0") {
-        statusText = "🚨 หมดสต็อก";
-      } else if (!isNaN(qty) && qty <= LOW_STOCK_LIMIT) {
-        statusText = "⚠️ ใกล้หมด";
-      }
-      
-      // เขียนค่าลงในคอลัมน์ K ของแถวที่กำลังแก้ไข (ทำงานทุกแถว ไม่ใช่แค่แถว 2)
-      sheet.getRange(row, ALERT_COL).setValue(statusText);
-    }
-
-    // 4. ดึงข้อมูลหัวตาราง (Header)
-    const headerName = sheet.getRange(1, col).getValue() || "คอลัมน์ที่ " + col;
-
-    // 5. ดึงข้อมูลอ้างอิง (3 คอลัมน์แรก)
-    const referenceData = sheet.getRange(row, 1, 1, 3).getValues()[0];
-    const refText = referenceData.filter(String).join(" | ") || "ไม่พบข้อมูลอ้างอิง";
-
-    // 6. บันทึก Log ลงชีต Logs
-    if (typeof writeLog === 'function') {
-      writeLog(user, `Edit [${sheetName}]`, refText, `${headerName}: ${oldValue} -> ${newValue}`, sheetName, "N/A");
-    }
-
-    // 🌟 7. ตั้งหัวข้อแจ้งเตือน Telegram (เปลี่ยนตามสถานะจริงของทุกแถว)
-    let alertHeader = `🔔 <b>แจ้งเตือนการแก้ไข [${sheetName}]</b>`;
-    if (!isNaN(newValue)) {
-      const val = Number(newValue);
-      if (val === 0) {
-        alertHeader = `🚨 <b>[ ALERT: ของหมดสต็อก! ]</b>`;
-      } else if (val <= LOW_STOCK_LIMIT) {
-        alertHeader = `⚠️ <b>[ WARNING: ของใกล้หมดแล้ว! ]</b>`;
-      }
-    }
-
-    // 8. ส่งข้อความเข้า Telegram
-    let msg = `${alertHeader}\n`;
-    msg += `━━━━━━━━━━━━━━━━\n`;
-    msg += `📍 <b>ตำแหน่ง:</b> แถว ${row} | ${headerName}\n`;
-    msg += `📦 <b>รายการ:</b> <code>${refText}</code>\n`;
-    msg += `❌ <b>เดิม:</b> ${oldValue}\n`;
-    msg += `✅ <b>ใหม่:</b> <b>${newValue}</b>\n`;
-    msg += `👤 <b>แก้ไขโดย:</b> ${user}\n`;
-    msg += `━━━━━━━━━━━━━━━━`;
-
-    sendTelegram(CHAT_ID, msg);
-
-  } catch (err) {
-    Logger.log("Error: " + err.toString());
-  }
-}
 function helpMenu() {
   return `🧭<b>STOCK GUIDE</b>\n━━━━━━━━━━\n👉 <code>/menu</code> - เมนูหลัก\n📦 <code>/stock CODE</code> - เช็คสต็อก\n➕ <code>/restock CODE QTY</code> - เติมของ\n📤 <code>/dp-แผนก CODE QTY</code> - เบิกของ\n📊 <code>/report</code> - สรุปคลัง`;
 }
@@ -783,19 +520,41 @@ function pushDashboard() {
   sendTelegram(CHAT_ID, msg);
 }
 
-// ============================================================
-// 10. UPDATE SHEET TEXT
-// ============================================================
-// ฟังก์ชันสำหรับอัปเดตตัวหนังสือสถานะใน Google Sheet (คอลัมน์ J)
-function updateStatusCell(sheet, row, qty) {
-  const STATUS_COL = 10; // คอลัมน์ J
-  let statusText = "✅ ปกติ";
+// Send Mail (แนบทั้ง PDF และ Excel ที่ใช้งานกับ Google Sheets ได้)
+function sendDailyEmailWithPDF() {
+  // บังคับขอสิทธิ์เข้าถึง Google Drive
+  DriveApp.getRootFolder(); 
+
+  const recipient = "okumakung2018@gmail.com";  // mailto
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName("STOCK"); // ชื่อชีต
+  const ssId = ss.getId();
+  const sheetId = sheet.getSheetId();
+  const dateStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy");
+  const token = ScriptApp.getOAuthToken();
+
+  // 1. เตรียม URL สำหรับ PDF
+  const pdfUrl = ss.getUrl().replace(/edit$/, '') + 'export?format=pdf&size=A4&portrait=true&gridlines=true&gid=' + sheetId;
   
-  if (qty == 0) {
-    statusText = "🚨 หมดสต็อก";
-  } else if (qty <= LOW_STOCK_LIMIT) {
-    statusText = "⚠️ ใกล้หมด";
-  }
-  
-  sheet.getRange(row, STATUS_COL).setValue(statusText);
+  // 2. เตรียม URL สำหรับ Excel (.xlsx) ซึ่ง Google Sheets รองรับ 100%
+  const excelUrl = `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx&gid=${sheetId}`;
+
+  // 3. ดึงข้อมูลไฟล์ (Fetch)
+  const pdfResponse = UrlFetchApp.fetch(pdfUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+  const excelResponse = UrlFetchApp.fetch(excelUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+
+  // 4. ส่งอีเมลพร้อมแนบ 2 ไฟล์ และใส่ลิงก์ตรงไปยัง Google Sheets
+  MailApp.sendEmail({
+    to: recipient,
+    subject: "📊 รายงานสต็อกประจำวัน - " + dateStr,
+    name: "🤖 SYSTEM INNOVATION AND SUPPLY", 
+    body: "สวัสดีครับ นี่คือข้อความอัตโนมัติ\n\n" +
+          "1. แนบไฟล์ PDF สำหรับดูสรุป\n" +
+          "2. แนบไฟล์ Excel (.xlsx) สำหรับนำไปใช้งานต่อใน Google Sheets\n\n" +
+          "🔗 หรือเข้าดูไฟล์ออนไลน์ได้ที่นี่: " + ss.getUrl(),
+    attachments: [
+      pdfResponse.getBlob().setName("Stock_Report_" + dateStr + ".pdf"),
+      excelResponse.getBlob().setName("Stock_Data_" + dateStr + ".xlsx")
+    ]
+  });
 }
