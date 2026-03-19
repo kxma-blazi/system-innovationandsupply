@@ -10,10 +10,6 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5KR2d8ukXl0DVUAj8
 // 2. CORE SYSTEM (Support ทั้งพิมพ์ และ กดปุ่ม)
 // ============================================================
 
-// ============================================================
-// 2. CORE SYSTEM (Support ทั้งพิมพ์ และ กดปุ่ม)
-// ============================================================
-
 function doPost(e) {
   try {
     if (!e || !e.postData) return;
