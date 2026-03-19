@@ -517,40 +517,80 @@ function pushDashboard() {
 }
 
 // Send Mail (แนบทั้ง PDF และ Excel ที่ใช้งานกับ Google Sheets ได้)
+// Send Mail (แนบทั้ง PDF และ Excel ที่ใช้งานกับ Google Sheets ได้)
 function sendDailyEmailWithPDF() {
-  // บังคับขอสิทธิ์เข้าถึง Google Drive
-  DriveApp.getRootFolder(); 
+  try {
+    DriveApp.getRootFolder(); // ขอ permission
 
-  const recipient = "okumakung2018@gmail.com";  // mailto
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName("STOCK"); // ชื่อชีต
-  const ssId = ss.getId();
-  const sheetId = sheet.getSheetId();
-  const dateStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy");
-  const token = ScriptApp.getOAuthToken();
+    // ✅ รองรับหลายอีเมล (ใส่คั่นด้วย ,)
+    const recipients = [
+      "okumakung2018@gmail.com",
+      "s65122250014@ssru.ac.th",
+      // "user3@gmail.com"
+    ].join(",");
 
-  // 1. เตรียม URL สำหรับ PDF
-  const pdfUrl = ss.getUrl().replace(/edit$/, '') + 'export?format=pdf&size=A4&portrait=true&gridlines=true&gid=' + sheetId;
-  
-  // 2. เตรียม URL สำหรับ Excel (.xlsx) ซึ่ง Google Sheets รองรับ 100%
-  const excelUrl = `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx&gid=${sheetId}`;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("STOCK");
 
-  // 3. ดึงข้อมูลไฟล์ (Fetch)
-  const pdfResponse = UrlFetchApp.fetch(pdfUrl, { headers: { 'Authorization': 'Bearer ' + token } });
-  const excelResponse = UrlFetchApp.fetch(excelUrl, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!sheet) throw new Error("ไม่พบชีต STOCK");
 
-  // 4. ส่งอีเมลพร้อมแนบ 2 ไฟล์ และใส่ลิงก์ตรงไปยัง Google Sheets
-  MailApp.sendEmail({
-    to: recipient,
-    subject: "📊 รายงานสต็อกประจำวัน - " + dateStr,
-    name: "🤖 SYSTEM INNOVATION AND SUPPLY", 
-    body: "สวัสดีครับ นี่คือข้อความอัตโนมัติ\n\n" +
-          "1. แนบไฟล์ PDF สำหรับดูสรุป\n" +
-          "2. แนบไฟล์ Excel (.xlsx) สำหรับนำไปใช้งานต่อใน Google Sheets\n\n" +
-          "🔗 หรือเข้าดูไฟล์ออนไลน์ได้ที่นี่: " + ss.getUrl(),
-    attachments: [
-      pdfResponse.getBlob().setName("Stock_Report_" + dateStr + ".pdf"),
-      excelResponse.getBlob().setName("Stock_Data_" + dateStr + ".xlsx")
-    ]
-  });
+    const ssId = ss.getId();
+    const sheetId = sheet.getSheetId();
+    const dateStr = Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy");
+    const token = ScriptApp.getOAuthToken();
+
+    // ✅ PDF (ปรับ format ให้สวยขึ้น)
+    const pdfUrl = `https://docs.google.com/spreadsheets/d/${ssId}/export?format=pdf&gid=${sheetId}&size=A4&portrait=true&fitw=true&gridlines=false`;
+
+    // ✅ Excel
+    const excelUrl = `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx&gid=${sheetId}`;
+
+    const options = {
+      headers: { Authorization: "Bearer " + token },
+      muteHttpExceptions: true
+    };
+
+    const pdfResponse = UrlFetchApp.fetch(pdfUrl, options);
+    const excelResponse = UrlFetchApp.fetch(excelUrl, options);
+
+    // ❌ กันไฟล์โหลดพัง
+    if (pdfResponse.getResponseCode() !== 200) {
+      throw new Error("PDF export ล้มเหลว");
+    }
+
+    if (excelResponse.getResponseCode() !== 200) {
+      throw new Error("Excel export ล้มเหลว");
+    }
+
+    MailApp.sendEmail({
+      to: recipients,
+      subject: `📊 รายงานสต็อกประจำวัน - ${dateStr}`,
+      name: "🤖 SYSTEM INNOVATION AND SUPPLY",
+      htmlBody: `
+        <h2>📦 รายงานสต็อกประจำวัน</h2>
+        <p>วันที่: <b>${dateStr}</b></p>
+
+        <ul>
+          <li>📄 แนบไฟล์ PDF (สำหรับดู)</li>
+          <li>📊 แนบไฟล์ Excel (สำหรับใช้งานต่อ)</li>
+        </ul>
+
+        <p>
+          🔗 <a href="${ss.getUrl()}">เปิดดู Google Sheets</a>
+        </p>
+
+        <hr>
+        <p style="color:gray;">ระบบอัตโนมัติ</p>
+      `,
+      attachments: [
+        pdfResponse.getBlob().setName(`Stock_Report_${dateStr}.pdf`),
+        excelResponse.getBlob().setName(`Stock_Data_${dateStr}.xlsx`)
+      ]
+    });
+
+    Logger.log("✅ ส่งเมลสำเร็จ");
+
+  } catch (err) {
+    Logger.log("❌ ERROR: " + err.message);
+  }
 }
