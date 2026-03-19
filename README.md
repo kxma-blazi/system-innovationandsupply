@@ -1,68 +1,25 @@
-# 📦 Google Sheets Telegram Stock Bot
+# 📦 Stock Management System (Telegram + Google Sheets)
 
-ระบบ **Stock Management Automation** ที่เชื่อมต่อระหว่าง **Google Sheets** และ **Telegram Bot**  
-เพื่อใช้จัดการคลังสินค้า ตรวจสอบสต็อก และแจ้งเตือนการเปลี่ยนแปลงแบบ **Real-time**
-
-ระบบนี้ช่วยให้ทีมสามารถ
-
-- ตรวจสอบสต็อกผ่าน Telegram
-- เบิก / เติมสินค้า
-- ค้นหาสินค้า
-- ตรวจสอบสินค้าคงเหลือต่ำ
-- รับแจ้งเตือนเมื่อมีการแก้ไขข้อมูลใน Spreadsheet
-
-โดยไม่ต้องเปิด Spreadsheet ตลอดเวลา
+ระบบจัดการสต็อกสินค้าอัตโนมัติผ่าน Telegram Bot  
+เชื่อมต่อกับ Google Sheets แบบเรียลไทม์ 🚀
 
 ---
 
-# ⚙️ Tech Stack
+## ✨ Features
 
-| Component | Tool |
-|---|---|
-| Automation | Google Apps Script |
-| Database | Google Sheets |
-| Messaging | Telegram Bot API |
-| Language | JavaScript |
-
----
-
-# 📊 System Overview
-
-
-ระบบจะใช้ **Telegram เป็น Interface หลัก**  
-ส่วน **Google Sheets เป็นฐานข้อมูล Stock**
+- 📦 ตรวจสอบสต็อกสินค้า
+- 🔍 ค้นหาสินค้า
+- 📥 เติมสินค้า (Restock)
+- 📤 เบิกสินค้า (Withdraw)
+- ⚠️ แจ้งเตือนของใกล้หมด (Low Stock Alert)
+- 📊 Dashboard รายงาน
+- 📜 ประวัติการใช้งาน (Logs)
+- 📄 Export รายงานเป็น PDF
+- 📧 ส่งอีเมลสรุปรายวันอัตโนมัติ
+- 🤖 ควบคุมผ่าน Telegram (มีปุ่ม UI)
 
 ---
 
-# 🗂️ Google Sheets Structure
+## 🧠 System Architecture
 
-ตัวอย่างโครงสร้าง Sheet `STOCK`
-
-| Column | Description |
-|---|---|
-| A | Item ID |
-| B | Material Code |
-| C | Description |
-| D | Serial Number |
-| E | Total Stock |
-| F | DP-CBR |
-| G | DP-CCS |
-| H | DP-SKO |
-| I | DP-RYG |
-| J | DP-TRT |
-
----
-
-# 🤖 Telegram Commands
-
-## ตรวจสอบสินค้า
-ใช้คำสั่ง /stock CODE
-
-## ค้นหาสินค้า
-ใช้คำสั่ง /KEYWORD
-
-## ดูสินค้าทั้งหมด
-ใช้คำสั่ง /allstock
-
-## ตรวจสอบสินค้าคงเหลือต่ำ
-/lowstock
+<img width="1536" height="1024" alt="System architecture for stock management" src="https://github.com/user-attachments/assets/c84cf189-cc77-4216-a31e-e684583265d9" />
