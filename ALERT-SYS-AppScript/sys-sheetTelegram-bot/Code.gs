@@ -1,9 +1,9 @@
 // ============================================================
 // 1. CONFIGURATION
 // ============================================================
-const TELEGRAM_TOKEN = "EIGHT327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s"; // API Token Telegtram
-const CHAT_ID = "-100373129091SEVEN"; // ID Group Telegram
-const LOW_STOCK_LIMIT = 1; // ตั้ง
+const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s"; // API Token Telegtram
+const CHAT_ID = "-ONE003731290917"; // ID Group Telegram
+const LOW_STOCK_LIMIT = 1; // ตั้งสินค้าต่ำสุด เพื่อเเจ้งเตือน
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5KR2d8ukXl0DVUAj8Lo11JQ8F00vL-ax7pkqRbDeSv1NTLNIRy094narUUyz_TbXH/exec";
 
 // ============================================================
@@ -21,6 +21,9 @@ function doPost(e) {
       const callbackId = data.callback_query.id;
       if (!data.callback_query.message) return;
       const chatId = data.callback_query.message.chat.id;
+
+      const adminName = data.callback_query.from.first_name || data.callback_query.from.username || "Unknown";
+
       let responseText = "";
 
       if (callbackData === "/allstock") {
@@ -50,11 +53,16 @@ function doPost(e) {
       else if (callbackData === "/history") { responseText = history(); } 
       else if (callbackData === "/help") { responseText = helpMenu(); }
 
-      if (responseText) { sendTelegram(chatId, responseText); }
-      answerCallback(callbackId);
+      if (responseText) { 
+        // รวมข้อความรายงาน + ชื่อแอดมิน เข้าด้วยกันก่อนส่ง
+        const finalMsg = responseText + `\n\n👤 <b>ดำเนินการโดย:</b> ${adminName}`;
+        
+        sendTelegram(chatId, finalMsg); 
+      }
+      
+      answerCallback(callbackId); // แจ้ง Telegram ว่ารับทราบการกดปุ่มแล้ว (ลดอาการปุ่มค้าง)
       return;
     }
-
     // 2️⃣ TEXT COMMAND
     if (!data.message || !data.message.text) return;
     const chatId = data.message.chat.id;
@@ -336,11 +344,39 @@ function writeLog(user, action, code, detail, sheetName, remain) {
 }
 
 function notifyActivity(title, code, type, qty, remain, dept = "", user = "") {
-  const statusEmoji = type === "IN" ? "🟢 [ เติมเข้า ]" : "🟠 [ เบิกออก ]";
-  const mathSign = type === "IN" ? "➕" : "➖";
-  let msg = `📌 <b>${title}</b>\n━━━━━━━━━━━━━━━━\n🆔 <b>รหัส:</b> <code>${code}</code>\n📝 <b>สถานะ:</b> ${statusEmoji}\n🔢 <b>จำนวน:</b> ${mathSign} <b>${qty}</b>\n`;
-  if (dept) msg += `🏢 <b>แผนก:</b> ${dept}\n`;
-  msg += `👤 <b>โดย:</b> ${user}\n━━━━━━━━━━━━━━━━\n📊 <b>คงเหลือ:</b> <b><u>${remain}</u></b> หน่วย`;
+  
+  // ==========================================
+  // 1. DATA PREPARATION (เตรียมข้อมูล)
+  // ==========================================
+  // ส่วนนี้ทำหน้าที่คำนวณหรือแปลงค่าดิบ (Raw Data) ให้กลายเป็นค่าที่พร้อมแสดงผล
+  const isIncoming = (type === "IN");
+  const statusEmoji = isIncoming ? "🟢 [ เติมเข้า ]" : "🟠 [ เบิกออก ]";
+  const mathSign    = isIncoming ? "➕" : "➖";
+  const userName    = user || "Staff"; // ถ้าไม่มีชื่อให้ขึ้นว่า Staff
+
+  // ==========================================
+  // 2. MESSAGE CONSTRUCTION (สร้างข้อความ)
+  // ==========================================
+  // ส่วนนี้ทำหน้าที่ประกอบข้อความ (Template) เข้าด้วยกันตามลำดับที่ต้องการ
+  let msg = `📌 <b>${title}</b>\n` +
+            `━━━━━━━━━━━━━━━━\n` +
+            `🆔 <b>รหัส:</b> <code>${code}</code>\n` +
+            `📝 <b>สถานะ:</b> ${statusEmoji}\n` +
+            `🔢 <b>จำนวน:</b> ${mathSign} <b>${qty}</b>\n`;
+
+  // เงื่อนไขพิเศษ: ถ้ามีแผนก ค่อยเพิ่มบรรทัดนี้ (Conditional Content)
+  if (dept) {
+    msg += `🏢 <b>แผนก:</b> ${dept}\n`;
+  }
+
+  msg += `👤 <b>โดย:</b> ${userName}\n` +
+         `━━━━━━━━━━━━━━━━\n` +
+         `📊 <b>คงเหลือ:</b> <b><u>${remain}</u></b> หน่วย`;
+
+  // ==========================================
+  // 3. EXECUTION / DELIVERY (การส่งออก)
+  // ==========================================
+  // ส่วนสุดท้ายคือการนำข้อความที่สร้างเสร็จแล้ว ส่งไปยังเป้าหมาย (Telegram)
   sendTelegram(CHAT_ID, msg);
 }
 
