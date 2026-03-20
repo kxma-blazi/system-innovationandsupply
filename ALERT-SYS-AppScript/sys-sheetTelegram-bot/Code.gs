@@ -2,9 +2,10 @@
 // 1. CONFIGURATION
 // ============================================================
 const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-One003731290917"; 
+const CHAT_ID = "-ONE003731290917"; 
 const LOW_STOCK_LIMIT = 1;
 const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5KR2d8ukXl0DVUAj8Lo11JQ8F00vL-ax7pkqRbDeSv1NTLNIRy094narUUyz_TbXH/exec";
+
 
 // ============================================================
 // 2. CORE SYSTEM (Support ทั้งพิมพ์ และ กดปุ่ม)
@@ -517,12 +518,11 @@ function pushDashboard() {
 }
 
 // Send Mail (แนบทั้ง PDF และ Excel ที่ใช้งานกับ Google Sheets ได้)
-// Send Mail (แนบทั้ง PDF และ Excel ที่ใช้งานกับ Google Sheets ได้)
 function sendDailyEmailWithPDF() {
   try {
     DriveApp.getRootFolder(); // ขอ permission
 
-    // ✅ รองรับหลายอีเมล (ใส่คั่นด้วย ,)
+    // ✅ รองรับหลายอีเมลเพราะใส่คั่นด้วย "," (เพิ่มด้วย)
     const recipients = [
       "okumakung2018@gmail.com",
       "s65122250014@ssru.ac.th",
@@ -593,4 +593,116 @@ function sendDailyEmailWithPDF() {
   } catch (err) {
     Logger.log("❌ ERROR: " + err.message);
   }
+}
+
+
+// TEST CASE
+function createTestCaseSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  
+  // ลบ sheet เก่าถ้ามี แล้วสร้างใหม่
+  let sheet = ss.getSheetByName("TestCases");
+  if (sheet) ss.deleteSheet(sheet);
+  sheet = ss.insertSheet("TestCases");
+
+  // ============ HEADER ============
+  const headers = ["#", "หมวด", "Test Case", "Input", "Expected Output", "Type", "ผลการทดสอบ", "หมายเหตุ"];
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setBackground("#2B2B2B")
+    .setFontColor("#FFFFFF")
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center");
+
+  // ============ DATA ============
+  const rows = [
+    // TC-01 /stock
+    ["TC-01-1", "/stock", "ค้นหา code ที่มีในระบบ",         "/stock Q001",         "แสดง Code, Desc, สต็อก",              "Positive", "", ""],
+    ["TC-01-2", "/stock", "ค้นหาด้วยตัวพิมพ์เล็ก",          "/stock q001",         "ผลเหมือน TC-01-1 (case-insensitive)", "Edge",     "", ""],
+    ["TC-01-3", "/stock", "ค้นหา code ที่ไม่มีในระบบ",       "/stock ZZZ",          "❌ ไม่พบข้อมูล",                      "Negative", "", ""],
+    ["TC-01-4", "/stock", "ไม่ใส่ code",                    "/stock",              "⚠️ ระบุรหัส: /stock Q01",             "Negative", "", ""],
+
+    // TC-02 /restock
+    ["TC-02-1", "/restock", "เติมสินค้าปกติ",               "/restock Q001 10",    "✅ Restock Success, stock +10",        "Positive", "", ""],
+    ["TC-02-2", "/restock", "จำนวน 0",                      "/restock Q001 0",     "⚠️ รูปแบบผิด",                        "Negative", "", ""],
+    ["TC-02-3", "/restock", "จำนวนติดลบ",                   "/restock Q001 -5",    "⚠️ รูปแบบผิด",                        "Negative", "", ""],
+    ["TC-02-4", "/restock", "ไม่ใส่ parameter",             "/restock",            "⚠️ รูปแบบผิด",                        "Negative", "", ""],
+    ["TC-02-5", "/restock", "code ไม่มีในระบบ",             "/restock ZZZ 5",      "❌ ไม่พบรหัสสินค้า",                  "Negative", "", ""],
+
+    // TC-03 /dp-xxx
+    ["TC-03-1", "/dp-xxx", "เบิก CBR ปกติ",                 "/dp-cbr Q001 2",      "✅ Success (CBR), stock -2",           "Positive", "", ""],
+    ["TC-03-2", "/dp-xxx", "เบิกเกินจำนวนที่มี",            "/dp-cbr Q001 9999",   "❌ สต็อกไม่พอ",                       "Negative", "", ""],
+    ["TC-03-3", "/dp-xxx", "เบิก CCS ปกติ",                 "/dp-ccs Q001 1",      "✅ Success (CCS)",                     "Positive", "", ""],
+    ["TC-03-4", "/dp-xxx", "จำนวน 0",                       "/dp-sko Q001 0",      "⚠️ รูปแบบผิด",                        "Negative", "", ""],
+    ["TC-03-5", "/dp-xxx", "code ไม่มีในระบบ",              "/dp-cbr ZZZ 1",       "❌ ไม่พบรหัสสินค้า",                  "Negative", "", ""],
+
+    // TC-04 /allstock
+    ["TC-04-1", "/allstock", "กดปุ่มดูสต็อกทั้งหมด",        "กดปุ่ม ดูสต็อกทั้งหมด", "หน้า 1, มีปุ่ม ➡️ และ 🏠",         "Positive", "", ""],
+    ["TC-04-2", "/allstock", "กดปุ่มถัดไป",                 "กดปุ่ม ➡️",           "หน้า 2, มีปุ่ม ⬅️ ➡️ และ 🏠",        "Positive", "", ""],
+    ["TC-04-3", "/allstock", "กดปุ่มก่อนหน้า",              "กดปุ่ม ⬅️",           "กลับหน้า 1",                          "Positive", "", ""],
+    ["TC-04-4", "/allstock", "กดปุ่มกลับเมนู",              "กดปุ่ม 🏠",           "แสดง Control Panel",                  "Positive", "", ""],
+    ["TC-04-5", "/allstock", "อยู่หน้าสุดท้าย",             "กดถัดไปจนหน้าสุดท้าย","ไม่มีปุ่ม ➡️",                        "Edge",     "", ""],
+
+    // TC-05 /lowstock
+    ["TC-05-1", "/lowstock", "มีสินค้า stock ≤ 1",          "/lowstock",           "แสดงรายการสินค้าใกล้หมด",            "Positive", "", ""],
+    ["TC-05-2", "/lowstock", "ไม่มีสินค้า stock ≤ 1",       "/lowstock",           "✅ ไม่มีสินค้าใกล้หมด",               "Edge",     "", ""],
+
+    // TC-06 /report & /history
+    ["TC-06-1", "/report",  "ดูรายงานสรุป",                 "/report",             "แสดงยอดรวม, ใกล้หมด, หมดสต็อก",     "Positive", "", ""],
+    ["TC-06-2", "/history", "ดูประวัติล่าสุด",              "/history",            "แสดง log 10 รายการล่าสุด",           "Positive", "", ""],
+    ["TC-06-3", "/history", "ตอน Logs ว่างเปล่า",           "/history",            "แสดงหัว ไม่ error",                   "Edge",     "", ""],
+
+    // TC-07 คำสั่งผิด
+    ["TC-07-1", "unknown cmd", "พิมพ์คำสั่งที่ไม่มี",       "/xyz",                "❌ ไม่รู้จักคำสั่ง + แสดง Control Panel", "Negative", "", ""],
+    ["TC-07-2", "unknown cmd", "ส่งข้อความธรรมดา",          "hello",               "ไม่ตอบสนอง ไม่ crash",               "Edge",     "", ""],
+    ["TC-07-3", "unknown cmd", "คำสั่งมีชื่อบอทต่อท้าย",   "/report@botname",     "ตัดชื่อบอทออก ทำงานปกติ",            "Edge",     "", ""],
+
+    // TC-08 onEdit
+    ["TC-08-1", "onEdit", "แก้ค่าใน Sheet STOCK",           "แก้ cell ใน STOCK",   "แจ้งเตือน Telegram แถว/คอลัมน์/ค่า", "Positive", "", ""],
+    ["TC-08-2", "onEdit", "แก้ค่าใน Sheet Logs",            "แก้ cell ใน Logs",    "ไม่แจ้งเตือน (กัน loop)",            "Edge",     "", ""],
+    ["TC-08-3", "onEdit", "กด Enter เฉยๆ ค่าไม่เปลี่ยน",   "กด Enter",            "ไม่แจ้งเตือน",                        "Edge",     "", ""],
+  ];
+
+  sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+
+  // ============ STYLING ============
+  // สีแถบสลับ
+  for (let i = 0; i < rows.length; i++) {
+    const bg = i % 2 === 0 ? "#F9F9F9" : "#FFFFFF";
+    sheet.getRange(i + 2, 1, 1, headers.length).setBackground(bg);
+  }
+
+  // สีคอลัมน์ Type
+  const typeCol = 6;
+  for (let i = 0; i < rows.length; i++) {
+    const type = rows[i][5];
+    const cell = sheet.getRange(i + 2, typeCol);
+    if (type === "Positive") { cell.setBackground("#D4EDDA").setFontColor("#155724"); }
+    else if (type === "Negative") { cell.setBackground("#F8D7DA").setFontColor("#721C24"); }
+    else if (type === "Edge") { cell.setBackground("#FFF3CD").setFontColor("#856404"); }
+    cell.setHorizontalAlignment("center").setFontWeight("bold");
+  }
+
+  // คอลัมน์ ผลการทดสอบ — dropdown
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(["✅ Pass", "❌ Fail", "⏳ Pending"], true).build();
+  sheet.getRange(2, 7, rows.length, 1).setDataValidation(rule);
+  sheet.getRange(2, 7, rows.length, 1)
+    .setValue("⏳ Pending")
+    .setHorizontalAlignment("center");
+
+  // ปรับขนาดคอลัมน์
+  sheet.setColumnWidth(1, 90);
+  sheet.setColumnWidth(2, 100);
+  sheet.setColumnWidth(3, 200);
+  sheet.setColumnWidth(4, 200);
+  sheet.setColumnWidth(5, 250);
+  sheet.setColumnWidth(6, 90);
+  sheet.setColumnWidth(7, 110);
+  sheet.setColumnWidth(8, 150);
+
+  // Freeze header
+  sheet.setFrozenRows(1);
+
+  SpreadsheetApp.getUi().alert("✅ สร้าง TestCases Sheet สำเร็จ!");
 }
