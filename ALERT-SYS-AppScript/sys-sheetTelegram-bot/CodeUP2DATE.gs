@@ -1,10 +1,10 @@
 // ============================================================
 // 1. CONFIGURATION API https://aistudio.google.com/api-keys?project=gen-lang-client-0093320233
 // ============================================================
-const TELEGRAM_TOKEN = "Eight327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
-const CHAT_ID = "-0NE003731290917"; 
+const TELEGRAM_TOKEN = "เเปด327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
+const CHAT_ID = "-หนึ่ง003731290917"; 
 const LOW_STOCK_LIMIT = 1;
-const GEMINI_API_KEY = "AIzaSyDzLqjhgUeIzVO-ZoCcGFr_a7lhoq6JDYg";
+const GEMINI_API_KEY = "เอIzaSyDzLqjhgUeIzVO-ZoCcGFr_a7lhoq6JDYg";
 
 // ============================================================
 // 2. CORE SYSTEM (doPost)
