@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>📦 SYSTEM INNOVATION Inventory Dashboard </title>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  /* ── RESET & BASE ── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ig1: #833ab4;
+    --ig2: #fd1d1d;
+    --ig3: #fcb045;
+    --grad: linear-gradient(135deg, #833ab4 0%, #fd1d1d 55%, #fcb045 100%);
+    --bg:  #f5f5f5;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --muted: #8a8a8a;
+    --border: #ebebeb;
+    --shadow: 0 2px 16px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+
+  body {
+    font-family: 'Kanit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-logo .icon {
+    width: 32px;
+    height: 32px;
+    background: var(--grad);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .refresh-btn {
+    background: var(--grad);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .refresh-btn:hover { opacity: 0.85; }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── TABS ── */
+  .tab-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 0;
+  }
+
+  .tab {
+    padding: 14px 20px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    bottom: -1px;
+  }
+  .tab.active {
+    color: var(--ig1);
+    border-bottom-color: var(--ig1);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 24px; max-width: 1280px; margin: 0 auto; }
+
+  /* ── FILTERS ── */
+  .filter-bar {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .filter-label {
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 200px;
+    max-width: 360px;
+  }
+  .search-wrap .icon-search {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .search-input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: var(--bg);
+  }
+  .search-input:focus { border-color: var(--ig1); background: #fff; }
+
+  .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chip.active {
+    background: var(--grad);
+    border-color: transparent;
+    color: #fff;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--grad);
+  }
+
+  .kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .kpi-icon.purple { background: rgba(131,58,180,0.12); }
+  .kpi-icon.pink   { background: rgba(253,29,29,0.10); }
+  .kpi-icon.orange { background: rgba(252,176,69,0.15); }
+  .kpi-icon.green  { background: rgba(40,167,69,0.12); }
+
+  .kpi-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .kpi-label { font-size: 13px; color: var(--muted); font-weight: 400; }
+
+  /* ── CHARTS GRID ── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--grad);
+    flex-shrink: 0;
+  }
+
+  .chart-wrap { position: relative; }
+  .bar-wrap   { height: 280px; }
+  .donut-wrap { height: 240px; display: flex; align-items: center; justify-content: center; }
+
+  .donut-legend {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: #fafafa; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge.ok  { background: rgba(40,167,69,0.1);  color: #1a7a35; }
+  .badge.low { background: rgba(253,29,29,0.10); color: #c0392b; }
+
+  .qty-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .qty-bar {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--grad);
+    min-width: 4px;
+    transition: width 0.4s;
+  }
+  .qty-num { font-weight: 600; min-width: 28px; text-align: right; }
+
+  .id-chip {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ig1);
+    font-family: monospace;
+  }
+
+  /* ── LOGS TABLE ── */
+  .action-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .action-badge.withdraw { background: rgba(253,29,29,0.10); color: #c0392b; }
+  .action-badge.restock  { background: rgba(40,167,69,0.10);  color: #1a7a35; }
+
+  /* ── PAGINATION ── */
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 16px;
+  }
+  .page-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: 'Kanit', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    color: var(--text);
+  }
+  .page-btn:hover { border-color: var(--ig1); color: var(--ig1); }
+  .page-btn.active {
+    background: var(--grad);
+    border-color: transparent;
+    color: #fff;
+  }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 999;
+  }
+  .spinner {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--ig1);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-size: 14px;
+    font-weight: 500;
+    background: var(--grad);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px; font-size: 14px; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 540px) {
+    .main { padding: 16px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpi-value { font-size: 24px; }
+    .filter-bar { padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">กำลังโหลดข้อมูล...</div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="icon">📦</div>
+    SYSTEM INNOVATION Inventory Dashboard
+  </div>
+  <div class="header-right">
+    <span id="lastUpdate" style="font-size:12px;color:var(--muted)"></span>
+    <span id="countdownBadge" style="
+      font-size:11px;font-weight:600;color:#fff;
+      background:var(--ig1);border-radius:20px;
+      padding:3px 10px;transition:background 0.4s;
+    ">🔄 30s</span>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadData()">↻ รีเฟรช</button>
+  </div>
+</header>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab active" onclick="switchTab('stock', this)">📦 สต็อกรายการ</button>
+  <button class="tab" onclick="switchTab('logs', this)">📜 ประวัติ Logs</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ── STOCK TAB ── -->
+  <div class="tab-content active" id="tab-stock">
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar">
+      <span class="filter-label">🔍 ค้นหา:</span>
+      <div class="search-wrap">
+        <span class="icon-search">🔎</span>
+        <input class="search-input" id="searchInput" type="text"
+          placeholder="ค้นหาชื่อรายการ หรือ ID..." oninput="applyFilter()" />
+      </div>
+      <span class="filter-label"><b>สถานะ:</b></span>
+      <div class="filter-chips">
+        <button class="chip active" data-alert="all"   onclick="setAlertFilter(this)">ทั้งหมด</button>
+        <button class="chip"        data-alert="ok"    onclick="setAlertFilter(this)">✅ ปกติ</button>
+        <button class="chip"        data-alert="low"   onclick="setAlertFilter(this)">⚠️ ใกล้หมด</button>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card">
+        <div class="kpi-icon purple">📦</div>
+        <div class="kpi-value" id="kpiTotal">—</div>
+        <div class="kpi-label">รายการทั้งหมด</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon pink">🔢</div>
+        <div class="kpi-value" id="kpiQty">—</div>
+        <div class="kpi-label">QTY รวมทั้งหมด</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon orange">⚠️</div>
+        <div class="kpi-value" id="kpiLow">—</div>
+        <div class="kpi-label">รายการใกล้หมด</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon green">✅</div>
+        <div class="kpi-value" id="kpiNormal">—</div>
+        <div class="kpi-label">รายการปกติ</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <!-- Bar Chart -->
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>Top 10 รายการที่มี QTY สูงสุด</div>
+        <div class="chart-wrap bar-wrap">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+      <!-- Donut Chart -->
+      <div class="card">
+        <div class="card-title"><span class="dot"></span>QTY ตามแผนก</div>
+        <div class="chart-wrap donut-wrap">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div class="donut-legend" id="donutLegend"></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="dot"></span>รายการสต็อกทั้งหมด
+        </span>
+        <span id="tableCount" style="font-size:12px;font-weight:400;color:var(--muted)"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>ชื่อรายการ</th>
+              <th>QTY</th>
+              <th>CBR</th><th>CCS</th><th>SKO</th><th>RYG</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="stockTableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="stockPagination"></div>
+    </div>
+
+  </div><!-- /tab-stock -->
+
+  <!-- ── LOGS TAB ── -->
+  <div class="tab-content" id="tab-logs">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>ประวัติการเบิก-เติมรายการ (100 รายการล่าสุด)</div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>ผู้ใช้</th>
+              <th>รายการ</th>
+              <th>รหัสรายการ</th>
+              <th>จำนวน</th>
+              <th>แผนก</th>
+              <th>คงเหลือ</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody"><tr><td colspan="7" class="empty">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /tab-logs -->
+
+</div><!-- /main -->
+
+<script>
+// ── STATE ──
+let allItems     = [];
+let filteredItems = [];
+let alertFilter  = 'all';
+let currentPage  = 1;
+const PAGE_SIZE  = 15;
+let barChartInst  = null;
+let donutChartInst = null;
+let maxQty       = 1;
+
+// ── TAB SWITCH ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'logs') loadLogs();
+}
+
+// ── LOAD DATA ──
+function loadData() {
+  document.getElementById('loadingOverlay').style.display = 'flex';
+  document.getElementById('refreshBtn').disabled = true;
+  stopAutoRefresh(); // หยุด timer ก่อน
+  google.script.run
+    .withSuccessHandler(data => { onStockData(data); startAutoRefresh(); })
+    .withFailureHandler(err  => { onError(err);      startAutoRefresh(); })
+    .getStockData();
+}
+
+function onStockData(data) {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('refreshBtn').disabled = false;
+
+  if (data.error) { alert('❌ ' + data.error); return; }
+
+  allItems = data.items || [];
+  maxQty   = Math.max(...allItems.map(r => r.qty), 1);
+
+  // KPI
+  document.getElementById('kpiTotal').textContent  = data.kpi.totalItems.toLocaleString();
+  document.getElementById('kpiQty').textContent    = data.kpi.totalQty.toLocaleString();
+  document.getElementById('kpiLow').textContent    = data.kpi.lowStock.toLocaleString();
+  document.getElementById('kpiNormal').textContent = data.kpi.normalStock.toLocaleString();
+
+  // Timestamp
+  const now = new Date();
+  document.getElementById('lastUpdate').textContent =
+    'อัพเดต ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+  // Charts
+  renderBarChart(data.top10);
+  renderDonutChart(data.deptData);
+
+  // Table
+  applyFilter();
+}
+
+function onError(err) {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('refreshBtn').disabled = false;
+  alert('❌ เกิดข้อผิดพลาด: ' + err.message);
+}
+
+// ── FILTER ──
+function setAlertFilter(btn) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  alertFilter = btn.dataset.alert;
+  currentPage = 1;
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  filteredItems = allItems.filter(item => {
+    const matchSearch = !q || item.description.toLowerCase().includes(q) || item.id.toLowerCase().includes(q);
+    const matchAlert  = alertFilter === 'all'
+      ? true : alertFilter === 'low'
+      ? item.alert.includes('⚠️') : item.alert.includes('✅');
+    return matchSearch && matchAlert;
+  });
+  currentPage = 1;
+  renderTable();
+  updateBarChart();
+}
+
+// ── BAR CHART ──
+function renderBarChart(top10) {
+  const ctx = document.getElementById('barChart').getContext('2d');
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: top10.map(r => r.label),
+      datasets: [{
+        label: 'QTY',
+        data: top10.map(r => r.value),
+        backgroundColor: top10.map((_, i) => {
+          const g = ctx.createLinearGradient(0, 0, 0, 280);
+          g.addColorStop(0, '#833ab4'); g.addColorStop(1, '#fcb045');
+          return g;
+        }),
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { family: 'Kanit', size: 10 }, maxRotation: 35 }, grid: { display: false } },
+        y: { ticks: { font: { family: 'Kanit', size: 11 } }, grid: { color: '#f0f0f0' } }
+      }
+    }
+  });
+}
+
+function updateBarChart() {
+  const sorted = [...filteredItems].sort((a,b) => b.qty - a.qty).slice(0,10);
+  if (!barChartInst) return;
+  barChartInst.data.labels   = sorted.map(r => r.description.substring(0,25) + (r.description.length > 25 ? '…' : ''));
+  barChartInst.data.datasets[0].data = sorted.map(r => r.qty);
+  barChartInst.update();
+}
+
+// ── DONUT CHART ──
+const DEPT_COLORS = ['#833ab4','#fd1d1d','#fcb045','#4fc3f7'];
+const DEPT_NAMES  = ['DP-CBR','DP-CCS','DP-SKO','DP-RYG'];
+
+function renderDonutChart(dept) {
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  if (donutChartInst) donutChartInst.destroy();
+  const vals = [dept.CBR, dept.CCS, dept.SKO, dept.RYG];
+  donutChartInst = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: DEPT_NAMES,
+      datasets: [{ data: vals, backgroundColor: DEPT_COLORS, borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+  // custom legend
+  const leg = document.getElementById('donutLegend');
+  leg.innerHTML = DEPT_NAMES.map((n,i) => `
+    <div class="legend-item">
+      <span class="legend-dot" style="background:${DEPT_COLORS[i]}"></span>
+      <span>${n}</span>
+      <span style="margin-left:auto;font-weight:600">${vals[i].toLocaleString()}</span>
+    </div>`).join('');
+}
+
+// ── TABLE ──
+function renderTable() {
+  const tbody = document.getElementById('stockTableBody');
+  const total = filteredItems.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  document.getElementById('tableCount').textContent =
+    `แสดง ${Math.min(total, (currentPage-1)*PAGE_SIZE+1)}–${Math.min(total, currentPage*PAGE_SIZE)} จาก ${total} รายการ`;
+
+  const slice = filteredItems.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+
+  if (!slice.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">ไม่พบข้อมูลที่ตรงกัน</td></tr>';
+    document.getElementById('stockPagination').innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = slice.map(r => {
+    const isLow    = r.alert.includes('⚠️');
+    const barW     = Math.max(4, Math.round((r.qty / maxQty) * 80));
+    return `<tr>
+      <td><span class="id-chip">${r.id}</span></td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.description}">${r.description}</td>
+      <td>
+        <div class="qty-bar-wrap">
+          <div class="qty-bar" style="width:${barW}px"></div>
+          <span class="qty-num">${r.qty}</span>
+        </div>
+      </td>
+      <td style="text-align:center">${r.dpCBR}</td>
+      <td style="text-align:center">${r.dpCCS}</td>
+      <td style="text-align:center">${r.dpSKO}</td>
+      <td style="text-align:center">${r.dpRYG}</td>
+      <td><span class="badge ${isLow?'low':'ok'}">${r.alert}</span></td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+  const pg = document.getElementById('stockPagination');
+  if (totalPages <= 1) { pg.innerHTML = ''; return; }
+  let html = '';
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || Math.abs(i - currentPage) <= 1) {
+      html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (Math.abs(i - currentPage) === 2) {
+      html += `<span style="color:var(--muted);padding:0 4px">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) {
+  const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE) || 1;
+  if (p < 1 || p > totalPages) return;
+  currentPage = p;
+  renderTable();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── LOGS ──
+function loadLogs() {
+  const tbody = document.getElementById('logsTableBody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">กำลังโหลด...</td></tr>';
+  google.script.run
+    .withSuccessHandler(onLogsData)
+    .withFailureHandler(() => {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">❌ โหลดข้อมูลไม่สำเร็จ</td></tr>';
+    })
+    .getLogsData();
+}
+
+function onLogsData(data) {
+  const tbody = document.getElementById('logsTableBody');
+  if (data.error || !data.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">ไม่มีข้อมูล Logs</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.logs.map(r => {
+    const isWd = r.action.toLowerCase().includes('withdraw');
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--muted);font-size:12px">${r.timestamp}</td>
+      <td><strong>${r.username}</strong></td>
+      <td><span class="action-badge ${isWd?'withdraw':'restock'}">${r.action}</span></td>
+      <td><span class="id-chip">${r.code}</span></td>
+      <td style="text-align:center;font-weight:600">${isWd?'-':'+'}<span style="color:${isWd?'#c0392b':'#1a7a35'}">${r.qty}</span></td>
+      <td>${r.dept}</td>
+      <td style="font-weight:600">${r.balance.toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── AUTO REFRESH ──
+const AUTO_REFRESH_SEC = 30; // ← ปรับเวลา refresh ได้ที่นี่ (วินาที)
+let refreshTimer   = null;
+let countdownTimer = null;
+let countdown      = AUTO_REFRESH_SEC;
+
+function startAutoRefresh() {
+  stopAutoRefresh();
+  countdown = AUTO_REFRESH_SEC;
+  updateCountdownUI();
+
+  // นับถอยหลัง
+  countdownTimer = setInterval(() => {
+    countdown--;
+    updateCountdownUI();
+    if (countdown <= 0) countdown = AUTO_REFRESH_SEC;
+  }, 1000);
+
+  // refresh จริง
+  refreshTimer = setInterval(() => {
+    silentRefresh();
+  }, AUTO_REFRESH_SEC * 1000);
+}
+
+function stopAutoRefresh() {
+  if (refreshTimer)   clearInterval(refreshTimer);
+  if (countdownTimer) clearInterval(countdownTimer);
+}
+
+function updateCountdownUI() {
+  const el = document.getElementById('countdownBadge');
+  if (el) el.textContent = `🔄 ${countdown}s`;
+}
+
+function silentRefresh() {
+  // refresh เงียบๆ ไม่แสดง loading overlay
+  countdown = AUTO_REFRESH_SEC;
+  google.script.run
+    .withSuccessHandler(data => {
+      if (!data || data.error) return;
+      allItems = data.items || [];
+      maxQty   = Math.max(...allItems.map(r => r.qty), 1);
+      document.getElementById('kpiTotal').textContent  = data.kpi.totalItems.toLocaleString();
+      document.getElementById('kpiQty').textContent    = data.kpi.totalQty.toLocaleString();
+      document.getElementById('kpiLow').textContent    = data.kpi.lowStock.toLocaleString();
+      document.getElementById('kpiNormal').textContent = data.kpi.normalStock.toLocaleString();
+      const now = new Date();
+      document.getElementById('lastUpdate').textContent =
+        'อัพเดต ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      renderBarChart(data.top10);
+      renderDonutChart(data.deptData);
+      applyFilter();
+      // flash badge สีเขียวสักครู่
+      const badge = document.getElementById('countdownBadge');
+      if (badge) { badge.style.background = '#1a7a35'; setTimeout(() => badge.style.background = '', 800); }
+    })
+    .withFailureHandler(() => {})
+    .getStockData();
+}
+
+// ── INIT ──
+window.onload = () => { loadData(); startAutoRefresh(); };
+</script>
+</body>
+</html>
