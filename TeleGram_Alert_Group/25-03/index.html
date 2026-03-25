@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📦 SYSTEM INNOVATION Inventory Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+  <style>
+    body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+    .sidebar-active { background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6; color: #3b82f6; }
+    .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+    .qty-bar { transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .tab-content.hidden { display: none; }
+    .chip.active { background-color: #eff6ff !important; color: #2563eb !important; border-color: #bfdbfe !important; }
+  </style>
+</head>
+
+<body class="h-screen overflow-hidden flex flex-col md:flex-row">
+
+  <div id="loadingOverlay" class="fixed inset-0 z-[100] bg-white/80 flex flex-col items-center justify-center space-y-4">
+    <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p class="text-blue-600 font-medium animate-pulse">กำลังซิงค์ข้อมูลกับ Google Sheets...</p>
+  </div>
+
+  <aside class="w-full md:w-64 bg-[#0f172a] text-slate-300 flex flex-col h-auto md:h-screen shadow-xl z-50">
+    <div class="p-6 flex items-center gap-3 border-b border-slate-800">
+      <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl">
+        <i class="fas fa-boxes-stacked"></i>
+      </div>
+      <div>
+        <h1 class="text-white font-bold leading-none text-sm">SmartStock</h1>
+        <p class="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">System Innovation</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+      <button onclick="switchTab('dashboard', this)" id="nav-dashboard" class="nav-btn sidebar-active w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-left">
+        <i class="fas fa-chart-pie w-5"></i> <span>หน้าแรก Dashboard</span>
+      </button>
+      <button onclick="switchTab('stock', this)" id="nav-stock" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition text-left">
+        <i class="fas fa-list-check w-5"></i> <span>รายการสต็อก</span>
+      </button>
+      <button onclick="switchTab('logs', this)" id="nav-logs" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition text-left">
+        <i class="fas fa-history w-5"></i> <span>ประวัติการเบิก-เติม</span>
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-slate-800 space-y-3">
+      <div id="countdownBadge" class="text-xs bg-slate-800 p-2 rounded-lg flex items-center justify-between transition-all duration-500">
+        <span class="text-slate-500">Auto Refresh</span>
+        <span id="timerText" class="text-blue-400 font-mono">30s</span>
+      </div>
+      <button onclick="loadData()" id="refreshBtn" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm transition">
+        <i class="fas fa-sync-alt mr-2"></i> รีเฟรชข้อมูล
+      </button>
+    </div>
+  </aside>
+
+  <main class="flex-1 h-screen overflow-y-auto flex flex-col">
+    <header class="h-16 bg-white border-b px-6 flex items-center justify-between sticky top-0 z-40 shadow-sm">
+      <h2 id="pageTitle" class="text-lg font-semibold text-slate-800">Dashboard Overview</h2>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:block text-right">
+          <p id="lastUpdate" class="text-[11px] text-slate-400">อัปเดตล่าสุด: --:--</p>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 border">
+          <i class="fas fa-user-circle"></i>
+        </div>
+      </div>
+    </header>
+
+    <div class="p-4 md:p-8">
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <p class="text-slate-500 text-sm">รายการทั้งหมด</p>
+            <h3 id="stat-total-sku" class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">-</h3>
+            <div class="absolute -right-2 -bottom-2 text-slate-50 opacity-10 text-6xl"><i class="fas fa-box"></i></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden">
+            <p class="text-slate-500 text-sm">จำนวนชิ้นรวม</p>
+            <h3 id="stat-total-qty" class="text-2xl md:text-3xl font-bold text-slate-800 mt-1">-</h3>
+            <div class="absolute -right-2 -bottom-2 text-slate-50 opacity-10 text-6xl"><i class="fas fa-layer-group"></i></div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-red-50 relative overflow-hidden">
+            <p class="text-red-500 text-sm font-medium">ใกล้หมด (Low)</p>
+            <h3 id="kpiLow" class="text-2xl md:text-3xl font-bold text-red-600 mt-1">-</h3>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-green-50 relative overflow-hidden">
+            <p class="text-green-500 text-sm font-medium">สต็อกปกติ</p>
+            <h3 id="kpiNormal" class="text-2xl md:text-3xl font-bold text-green-600 mt-1">-</h3>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+            <h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2">
+              <span class="w-1.5 h-6 bg-blue-600 rounded-full"></span> Top 10 High Inventory
+            </h4>
+            <div class="h-80"><canvas id="barChart"></canvas></div>
+          </div>
+          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col">
+            <h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2">
+              <span class="w-1.5 h-6 bg-indigo-600 rounded-full"></span> Stock by Department
+            </h4>
+            <div class="flex-1 flex items-center justify-center relative">
+              <canvas id="donutChart"></canvas>
+            </div>
+            <div id="donutLegend" class="grid grid-cols-2 gap-2 mt-6"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="tab-stock" class="tab-content hidden space-y-6">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="p-6 border-b border-slate-50 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="relative w-full md:w-96">
+              <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="searchInput" oninput="applyFilter()" placeholder="ค้นหาชื่อรายการ หรือ ID..." 
+                     class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            <div class="flex gap-2">
+              <button onclick="setAlertFilter(this)" data-alert="all" class="chip active px-4 py-2 rounded-lg text-sm font-medium border border-slate-200">ทั้งหมด</button>
+              <button onclick="setAlertFilter(this)" data-alert="low" class="chip px-4 py-2 rounded-lg text-sm font-medium border border-slate-200 text-red-600">⚠️ ใกล้หมด</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-500 font-medium">
+                <tr>
+                  <th class="px-6 py-4">ID</th>
+                  <th class="px-6 py-4">รายการ</th>
+                  <th class="px-6 py-4">จำนวนรวม</th>
+                  <th class="px-6 py-4 text-center">CBR</th>
+                  <th class="px-6 py-4 text-center">CCS</th>
+                  <th class="px-6 py-4 text-center">SKO</th>
+                  <th class="px-6 py-4 text-center">RYG</th>
+                  <th class="px-6 py-4">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody id="stockTableBody" class="divide-y divide-slate-50"></tbody>
+            </table>
+          </div>
+          <div class="p-4 bg-slate-50 border-t flex items-center justify-between" id="stockPagination"></div>
+        </div>
+      </section>
+
+      <section id="tab-logs" class="tab-content hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+          <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+             <h4 class="font-bold text-slate-700">📜 100 รายการล่าสุด</h4>
+             <span id="tableCount" class="text-xs text-slate-400"></span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="bg-slate-50 text-slate-500 uppercase text-[11px] tracking-wider">
+                <tr>
+                  <th class="px-6 py-4">เวลา</th>
+                  <th class="px-6 py-4">ผู้ใช้</th>
+                  <th class="px-6 py-4">Action</th>
+                  <th class="px-6 py-4">รหัส</th>
+                  <th class="px-6 py-4 text-center">จำนวน</th>
+                  <th class="px-6 py-4">แผนก</th>
+                  <th class="px-6 py-4">คงเหลือ</th>
+                </tr>
+              </thead>
+              <tbody id="logsTableBody" class="divide-y divide-slate-50"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // --- GLOBAL STATE ---
+    const AUTO_REFRESH_SEC = 30;
+    let allItems = [], filteredItems = [], alertFilter = 'all', currentPage = 1;
+    const PAGE_SIZE = 15;
+    let barChartInst = null, donutChartInst = null, maxQty = 1;
+    let refreshTimer = null, countdown = AUTO_REFRESH_SEC;
+
+    window.onload = function() {
+      loadData();
+      startAutoRefresh();
+    };
+
+    // --- TAB NAVIGATION ---
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('sidebar-active'));
+      
+      const tab = document.getElementById('tab-' + name);
+      if(tab) tab.classList.remove('hidden');
+      if(btn) btn.classList.add('sidebar-active');
+      
+      const titles = { 'dashboard': 'Dashboard Overview', 'stock': 'Inventory List', 'logs': 'Transaction History' };
+      document.getElementById('pageTitle').innerText = titles[name] || 'Dashboard';
+      
+      if (name === 'logs') loadLogs();
+    }
+
+    // --- LOAD DATA ---
+    function loadData() {
+      document.getElementById('loadingOverlay').classList.remove('hidden');
+      google.script.run
+        .withSuccessHandler(onStockData)
+        .withFailureHandler(err => { 
+          console.error(err);
+          showToast('❌ โหลดข้อมูลไม่สำเร็จ: ' + err, 'error');
+          document.getElementById('loadingOverlay').classList.add('hidden');  
+        })
+        .getDashboardStats();
+    }
+
+    function onStockData(data) {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+      if (!data || data.error) return;
+
+      allItems = data.items || [];
+      maxQty = Math.max(...allItems.map(r => r.qty || 0), 1);
+
+      document.getElementById('stat-total-sku').textContent = (data.kpi.totalItems || 0).toLocaleString();
+      document.getElementById('stat-total-qty').textContent = (data.kpi.totalQty || 0).toLocaleString();
+      document.getElementById('kpiLow').textContent = (data.kpi.lowStock || 0).toLocaleString();
+      document.getElementById('kpiNormal').textContent = (data.kpi.normalStock || 0).toLocaleString();
+      
+      const now = new Date();
+      document.getElementById('lastUpdate').textContent = 'อัปเดตล่าสุด: ' + now.toLocaleTimeString('th-TH');
+
+      renderBarChart(data.top10 || []);
+      renderDonutChart(data.deptData || {});
+      applyFilter();
+    }
+
+    function showToast(msg, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-xl text-white shadow-2xl z-[200] transition-all duration-300 transform translate-y-0
+        ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+      toast.innerHTML = `<i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-triangle'} mr-2"></i> ${msg}`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // --- CHARTS ---
+    function renderBarChart(top10) {
+      const ctx = document.getElementById('barChart').getContext('2d');
+      if (barChartInst) barChartInst.destroy();
+      barChartInst = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: top10.map(r => r.label.length > 15 ? r.label.substring(0,15)+'..' : r.label),
+          datasets: [{
+            data: top10.map(r => r.value),
+            backgroundColor: '#3b82f6',
+            borderRadius: 8,
+            barThickness: 20
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderDonutChart(dept) {
+      const ctx = document.getElementById('donutChart').getContext('2d');
+      if (donutChartInst) donutChartInst.destroy();
+      const labels = ['CBR', 'CCS', 'SKO', 'RYG'];
+      const colors = ['#3b82f6', '#818cf8', '#f59e0b', '#10b981'];
+      const vals = [dept.CBR || 0, dept.CCS || 0, dept.SKO || 0, dept.RYG || 0];
+      
+      donutChartInst = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{ data: vals, backgroundColor: colors, borderWeight: 0, cutout: '75%' }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      });
+
+      const leg = document.getElementById('donutLegend');
+      leg.innerHTML = labels.map((n, i) => `
+        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+          <span class="w-2.5 h-2.5 rounded-full" style="background:${colors[i]}"></span>
+          <span class="text-[11px] text-slate-500 font-medium">${n}</span>
+          <span class="text-[11px] font-bold ml-auto">${vals[i].toLocaleString()}</span>
+        </div>
+      `).join('');
+    }
+
+    // --- TABLE LOGIC ---
+    function applyFilter() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      filteredItems = allItems.filter(item => {
+        const matchSearch = !q || String(item.description).toLowerCase().includes(q) || String(item.id).toLowerCase().includes(q);
+        const matchAlert = alertFilter === 'all' ? true : (item.alert && item.alert.includes('⚠️'));
+        return matchSearch && matchAlert;
+      });
+      currentPage = 1;
+      renderTable();
+    }
+
+    function setAlertFilter(btn) {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      alertFilter = btn.dataset.alert;
+      applyFilter();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('stockTableBody');
+      const start = (currentPage - 1) * PAGE_SIZE;
+      const slice = filteredItems.slice(start, start + PAGE_SIZE);
+      
+      if(!slice.length) {
+        tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-400">ไม่พบข้อมูลที่ค้นหา</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = slice.map(r => {
+        const isLow = r.alert && r.alert.includes('⚠️');
+        const barW = Math.max(5, ((r.qty || 0)/maxQty)*100);
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="px-6 py-4 font-mono text-xs text-blue-600 font-bold">${r.id}</td>
+            <td class="px-6 py-4 font-medium text-slate-700">${r.description}</td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden md:block">
+                  <div class="qty-bar h-full ${isLow?'bg-red-500':'bg-blue-500'}" style="width:${barW}%"></div>
+                </div>
+                <span class="font-bold">${r.qty}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-center text-slate-500">${r.dpCBR}</td>
+            <td class="px-6 py-4 text-center text-slate-500">${r.dpCCS}</td>
+            <td class="px-6 py-4 text-center text-slate-500">${r.dpSKO}</td>
+            <td class="px-6 py-4 text-center text-slate-500">${r.dpRYG}</td>
+            <td class="px-6 py-4">
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold ${isLow?'bg-red-50 text-red-600':'bg-green-50 text-green-600'}">
+                ${isLow ? 'LOW STOCK' : 'NORMAL'}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const totalPages = Math.ceil(filteredItems.length / PAGE_SIZE) || 1;
+      const pg = document.getElementById('stockPagination');
+      pg.innerHTML = `
+        <p class="text-xs text-slate-500">แสดง ${filteredItems.length} รายการ</p>
+        <div class="flex gap-1">
+          <button onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''} class="px-3 py-1 border rounded hover:bg-white disabled:opacity-30">‹</button>
+          <span class="px-3 py-1 text-xs font-bold">${currentPage} / ${totalPages}</span>
+          <button onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled':''} class="px-3 py-1 border rounded hover:bg-white disabled:opacity-30">›</button>
+        </div>
+      `;
+    }
+
+    function goPage(p) { currentPage = p; renderTable(); }
+
+    // --- LOGS ---
+    function loadLogs() {
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center animate-pulse text-slate-400">กำลังโหลดประวัติ...</td></tr>`;
+      google.script.run.withSuccessHandler(data => {
+        if(!data || !data.logs || data.logs.length === 0) {
+           tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่พบประวัติการทำรายการ</td></tr>`;
+           return;
+        }
+        tbody.innerHTML = data.logs.map(r => {
+          const isWd = String(r.action).toLowerCase().includes('withdraw');
+          return `
+            <tr class="hover:bg-slate-50 transition text-xs">
+              <td class="px-6 py-3 text-slate-400">${r.timestamp}</td>
+              <td class="px-6 py-3 font-bold text-slate-700">${r.username}</td>
+              <td class="px-6 py-3">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isWd ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'} uppercase">
+                  ${r.action}
+                </span>
+              </td>
+              <td class="px-6 py-3 font-mono text-blue-600">${r.code}</td>
+              <td class="px-6 py-3 text-center font-bold ${isWd ? 'text-red-500' : 'text-green-500'}">${isWd?'-':'+'}${r.qty}</td>
+              <td class="px-6 py-3 text-slate-500">${r.dept || '-'}</td>
+              <td class="px-6 py-3 font-bold text-slate-700">${r.balance}</td>
+            </tr>
+          `;
+        }).join('');
+      }).getLogsData();
+    }
+
+    // --- AUTO REFRESH ---
+    function startAutoRefresh() {
+      if(refreshTimer) clearInterval(refreshTimer);
+      countdown = AUTO_REFRESH_SEC;
+      let isFetching = false;
+
+      refreshTimer = setInterval(() => {
+        if(countdown <= 0 && !isFetching) {
+          isFetching = true;
+          google.script.run
+            .withSuccessHandler(data => {
+              onStockData(data);
+              isFetching = false;
+              countdown = AUTO_REFRESH_SEC;
+              showToast("🔄 อัปเดตข้อมูลอัตโนมัติสำเร็จ");
+              const badge = document.getElementById('countdownBadge');
+              if(badge) {
+                badge.classList.add('bg-green-600'); 
+                setTimeout(() => badge.classList.remove('bg-green-600'), 1000);
+              }
+            })
+            .withFailureHandler(err => {
+              isFetching = false;
+              showToast("❌ อัปเดตผิดพลาด: " + err, "error");
+            })
+            .getDashboardStats();
+
+          // รีเฟรซ Logs เฉพาะตอนที่หน้า Logs เปิดอยู่
+          if (!document.getElementById('tab-logs').classList.contains('hidden')) {
+            loadLogs();
+          }
+          
+        } else if (countdown > 0) {
+          countdown--;
+          const timerEl = document.getElementById('timerText');
+          if(timerEl) timerEl.textContent = countdown + 's';
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+</html>
