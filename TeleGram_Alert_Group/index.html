@@ -404,37 +404,43 @@
     }
 
 function startAutoRefresh() {
+  // ล้าง Timer เก่าป้องกันการทำงานซ้ำซ้อน
   if(refreshTimer) clearInterval(refreshTimer);
-  if(countdownTimer) clearInterval(countdownTimer);
+  
   countdown = AUTO_REFRESH_SEC;
   
-  // 1. ตัวนับถอยหลัง (เพื่อให้ UI ดูขยับตลอดเวลา ไม่ดูเหมือนค้าง)
-  countdownTimer = setInterval(() => {
+  refreshTimer = setInterval(() => {
     countdown--;
+    
+    // อัปเดตตัวเลขบนหน้าจอ
     const timerEl = document.getElementById('timerText');
     if(timerEl) timerEl.textContent = countdown + 's';
     
-    // เมื่อครบกำหนด 0 วิ
+    // เมื่อตัวนับถอยหลังเหลือ 0
     if(countdown <= 0) {
-      countdown = AUTO_REFRESH_SEC; // รีเซ็ตตัวเลข
-      // ไม่ต้องเขียน google.script.run ซ้ำที่นี่ 
-      // เพราะเรามี refreshTimer แยกไว้ข้างล่างแล้ว หรือจะสั่ง loadData() ตรงนี้เลยก็ได้
+      countdown = AUTO_REFRESH_SEC; // รีเซ็ตตัวนับถอยหลัง
+      
+      // สั่งดึงข้อมูลใหม่ทันที (เหมือนการ Refresh ข้อมูลหน้าจอ)
+      google.script.run.withSuccessHandler(data => {
+        onStockData(data); // อัปเดตตารางและ KPI
+        
+        // แสดง Effect สีเขียวว่าอัปเดตแล้ว
+        const badge = document.getElementById('countdownBadge');
+        if(badge) {
+          badge.classList.add('bg-green-600'); 
+          setTimeout(() => {
+            badge.classList.remove('bg-green-600');
+          }, 1000);
+        }
+      }).getDashboardStats(); // หรือใช้ loadData() ถ้าคุณรวมฟังก์ชันไว้แล้ว
+      
+      // ถ้าหน้า History เปิดอยู่ ให้รีเฟรซ Logs ด้วย
+      if (typeof loadLogs === "function") {
+        loadLogs();
+      }
     }
-  }, 1000);
-
-      refreshTimer = setInterval(() => {
-        google.script.run.withSuccessHandler(data => {
-          onStockData(data); // ตัวนี้จะอัปเดตทั้งตารางและ KPI ในฟังก์ชันเดียว
-          const badge = document.getElementById('countdownBadge');
-          if(badge) {
-            badge.classList.add('bg-green-600'); // เปลี่ยนเป็นสีเขียว
-            setTimeout(() => {
-              badge.classList.remove('bg-green-600'); // กลับเป็นสีเดิมหลังจาก 1 วินาที
-  }, 1000);
-    }
-  }).getDashboardStats();
-      }, AUTO_REFRESH_SEC * 1000);
-    }
+  }, 1000); // ทำงานทุกๆ 1 วินาที
+}
   </script>
 </body>
 </html>
