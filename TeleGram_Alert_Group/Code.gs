@@ -3,7 +3,7 @@
 // ============================================================
 const TELEGRAM_TOKEN  = "8327163778:AAFM4aKpxT29WTB4z_StzKEEcRGrSBDS2_s";
 const CHAT_ID         = "-1003731290917";
-const LOW_STOCK_LIMIT = 3;  // ← ปรับขีดเตือนได้ที่นี่
+const LOW_STOCK_LIMIT = 1;  // ← ปรับขีดเตือนได้ที่นี่
 const GEMINI_API_KEY  = "AIzaSyDzLqjhgUeIzVO-ZoCcGFr_a7lhoq6JDYg";
 const SHEET_ID        = "1MyAWKuCtmBclqVWALUEhEZjF7jKLMHs2sqL5oXjhA0w";
 
@@ -438,7 +438,7 @@ function sendAllStock(chatId, page, sheetName) {
 // ============================================================
 function writeLog(user, action, code, qty, dept, balance) {
   const ss = getSpreadsheet();
-  let logSheet = ss.getSheetByName("Logs");
+  let logSheet = ss.getSheetByName("Logs"); // ใช้ชื่อ Logs ตรงๆ
   
   // 1. ถ้าไม่มีชีต Logs ให้สร้างใหม่พร้อมหัวตาราง
   if (!logSheet) {
@@ -459,15 +459,16 @@ function writeLog(user, action, code, qty, dept, balance) {
 
   // 2. บันทึกข้อมูลลงแถวใหม่
   logSheet.appendRow([
-    new Date(), // วันเวลา
-    user,       // ชื่อผู้ใช้งาน
-    action,     // กิจกรรม (Withdraw/Restock)
-    code,       // รหัสรายการ
-    qty,        // จำนวน
-    dept,       // เเผนก
-    balance     // ยอดคงเหลือสุทธิ
+    new Date(), 
+    user,       
+    action,     
+    code,       
+    qty,        
+    dept,       
+    balance     
   ]);
 }
+
 function sendMsg(chatId, text) {
   sendToTelegram("sendMessage", { chat_id: chatId, text: text, parse_mode: "Markdown" });
 }
@@ -496,12 +497,59 @@ function sendDailyStockPDF(chatId = CHAT_ID) {
 // ============================================================
 // 11. TRIGGERS
 // ============================================================
+/*
 function onEdit(e) {
   const range     = e.range;
   const sheetName = range.getSheet().getName();
   if (sheetName === "Logs") return;
   const user = Session.getActiveUser().getEmail() || "Unknown";
   notifyActivity(`✏️ *แก้ไขโดยตรง*\nชีต: ${sheetName} | เซลล์: ${range.getA1Notation()}\n${e.oldValue||"-"} → ${e.value||"-"}\nโดย: ${user}`);
+}
+*/
+
+/* 📢 วิธีแก้ปัญหา "ผู้ใช้งานไม่ระบุตัวตน" (Anonymous):
+  --------------------------------------------------
+  1. แชร์ไฟล์แบบระบุอีเมล (Specific People) ให้ผู้แก้ไขเป็น Editor
+  2. ให้ผู้แก้ไขคนนั้นเปิดหน้า Apps Script (ส่วนขยาย > Apps Script)
+  3. ให้เขากดปุ่ม "เรียกใช้" (Run) ฟังก์ชัน onEdit หรือฟังก์ชันใดก็ได้ 1 ครั้ง
+  4. ระบบจะบังคับให้เขากด "ตรวจสอบสิทธิ์" (Review Permissions) และ "อนุญาต" (Allow)
+  5. หลังจากนั้น เมื่อเขาแก้ไขไฟล์ บอทจะสามารถดึงอีเมลมาแจ้งเตือนได้ถูกต้องครับ
+*/
+function onEdit(e) {
+  const range = e.range;
+  const sheetName = range.getSheet().getName();
+  
+  // ป้องกันการ Loop แจ้งเตือนในหน้า Logs
+  if (sheetName === "Logs") return;
+
+  // พยายามดึงชื่อผู้ใช้งาน
+  let user = "";
+  try {
+    user = Session.getActiveUser().getEmail() || (e.user ? e.user.getEmail() : "");
+  } catch (err) {}
+  if (!user || user === "") user = "ผู้ใช้งานผ่าน Google Sheet";
+
+  const oldVal = e.oldValue || "0";
+  const newVal = e.value || "0";
+  
+  // ส่งแจ้งเตือน Telegram
+  if (e.value === undefined) {
+    notifyActivity(`🗑️ *ลบข้อมูล*\nชีต: ${sheetName} | เซลล์: ${range.getA1Notation()}\nลบค่า: ${oldVal}\n👤 โดย: ${user}`);
+  } else {
+    notifyActivity(`✏️ *แก้ไขโดยตรง*\n📍 ชีต: ${sheetName} | เซลล์: ${range.getA1Notation()}\n🔄 \`${oldVal}\` ➡️ \`${newVal}\`\n👤 โดย: ${user}`);
+    
+    // ++ บันทึก Log เมื่อแก้ตัวเลขในหน้า STOCK คอลัมน์ F (คอลัมน์ที่ 6 คือ QTY) ++
+    if (sheetName === "STOCK" && range.getColumn() === 6) {
+      const sheet = range.getSheet();
+      const code = sheet.getRange(range.getRow(), 1).getValue(); // ดึง ID จากคอลัมน์ A
+      const diff = Number(newVal) - Number(oldVal);
+      
+      if (diff !== 0) { // ถ้าตัวเลขมีการเปลี่ยนแปลงจริงๆ
+        const actionName = diff > 0 ? "Manual Add" : "Manual Reduce";
+        writeLog(user, actionName, code, Math.abs(diff), "แก้ไขบนชีต", Number(newVal));
+      }
+    }
+  }
 }
 
 function sendDailyReport() {
@@ -668,52 +716,49 @@ function getSpreadsheet() {
 function getDashboardStats() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
   const sheet = ss.getSheetByName("STOCK");
-  const lastRow = sheet.getLastRow();
+  const data = sheet.getDataRange().getValues();
+  const rows = data.slice(1); // ตัดหัวตารางออก
   
-  if (lastRow <= 1) return { items: [], kpi: { totalItems: 0, totalQty: 0, lowStock: 0, normalStock: 0 }, top10: [], deptData: {} };
-
-  // ดึงเฉพาะช่วงที่มีข้อมูลจริง (A2 ถึง K[lastRow])
-  // คอลัมน์ K คือดัชนีที่ 11
-  const data = sheet.getRange(2, 1, lastRow - 1, 11).getValues();
-  
-  let items = [];
+  // 1. เตรียมตัวแปรสำหรับคำนวณ KPI และแผนก
   let totalQty = 0;
   let lowStockCount = 0;
   let normalStockCount = 0;
-  let deptTotals = { CBR: 0, CCS: 0, SKO: 0, RYG: 0 };
-
-  data.forEach(row => {
-    if (!row[0]) return; // ข้ามแถวที่ไม่มี ID
-
-    const qty = Number(row[5]) || 0;
-    const isLow = String(row[10]).includes('⚠️');
-
-    items.push({
-      id: row[0],
-      description: row[3],
-      qty: qty,
-      dpCBR: row[6] || 0,
-      dpCCS: row[7] || 0,
-      dpSKO: row[8] || 0,
-      dpRYG: row[9] || 0,
-      alert: row[10]
-    });
-
+  let deptData = { CBR: 0, CCS: 0, SKO: 0, RYG: 0 };
+  
+  // 2. จัดการข้อมูลสำหรับ Table และคำนวณสถิติ
+  const items = rows.map(row => {
+    const qty = Number(row[5]) || 0; // คอลัมน์ F: จำนวนรวม
+    const isLow = qty <= LOW_STOCK_LIMIT;
+    
     totalQty += qty;
     if (isLow) lowStockCount++; else normalStockCount++;
+    
+    // รวมยอดแต่ละแผนก (สมมติคอลัมน์ C, D, E, F คือ CBR, CCS, SKO, RYG)
+    // ปรับ Index [2, 3, 4, 5] ตามตำแหน่งคอลัมน์จริงในชีตของคุณนะครับ
+    deptData.CBR += Number(row[2]) || 0;
+    deptData.CCS += Number(row[3]) || 0;
+    deptData.SKO += Number(row[4]) || 0;
+    deptData.RYG += Number(row[5]) || 0;
 
-    deptTotals.CBR += Number(row[6]) || 0;
-    deptTotals.CCS += Number(row[7]) || 0;
-    deptTotals.SKO += Number(row[8]) || 0;
-    deptTotals.RYG += Number(row[9]) || 0;
+    return {
+      id: row[0],           // คอลัมน์ A
+      description: row[1],  // คอลัมน์ B
+      qty: qty,
+      dpCBR: row[2] || 0,
+      dpCCS: row[3] || 0,
+      dpSKO: row[4] || 0,
+      dpRYG: row[5] || 0,
+      alert: isLow ? "⚠️" : ""
+    };
   });
 
-  // จัดอันดับ Top 10 (ทำที่ฝั่ง Server เลยจะเร็วกว่า)
+  // 3. จัดอันดับ Top 10 สำหรับกราฟแท่ง
   const top10 = [...items]
     .sort((a, b) => b.qty - a.qty)
     .slice(0, 10)
     .map(item => ({ label: item.description, value: item.qty }));
 
+  // 4. ส่งก้อนข้อมูลกลับไปให้หน้าเว็บ (onStockData จะเป็นคนรับไป)
   return {
     items: items,
     kpi: {
@@ -723,16 +768,19 @@ function getDashboardStats() {
       normalStock: normalStockCount
     },
     top10: top10,
-    deptData: deptTotals
+    deptData: deptData
   };
 }
+
 
 // ฟังก์ชันสำหรับหน้า History (Logs)
 function getLogsData() {
   const ss = SpreadsheetApp.openById(SHEET_ID);
-  const sheet = ss.getSheetByName("Logs");
-  const lastRow = sheet.getLastRow();
+  const sheet = ss.getSheetByName("Logs"); // ใช้ชื่อ Logs
   
+  if (!sheet) return { logs: [], error: "ไม่พบชีต Logs" };
+
+  const lastRow = sheet.getLastRow();
   if (lastRow <= 1) return { logs: [] };
 
   // ดึงข้อมูล 100 รายการล่าสุด
@@ -741,13 +789,13 @@ function getLogsData() {
   const data = sheet.getRange(startRow, 1, numRows, 7).getValues();
 
   const logs = data.map(row => ({
-    timestamp: Utilities.formatDate(new Date(row[0]), "GMT+7", "dd/MM/yy HH:mm"),
-    username:  row[1], // ชื่อผู้ใช้งาน
-    action:    row[2], // กิจกรรม
-    code:      row[3], // รหัสรายการ
-    qty:       row[4], // จำนวน
-    dept:      row[5], // เเผนก
-    balance:   row[6]  // ยอดคงเหลือสุทธิ
+    timestamp: row[0] ? Utilities.formatDate(new Date(row[0]), "GMT+7", "dd/MM/yy HH:mm") : "-",
+    username:  String(row[1] || "-"),
+    action:    String(row[2] || "-"),
+    code:      String(row[3] || "-"),
+    qty:       Number(row[4]) || 0,
+    dept:      String(row[5] || "-"),
+    balance:   Number(row[6]) || 0
   })).reverse(); 
 
   return { logs: logs };
