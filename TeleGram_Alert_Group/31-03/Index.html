@@ -1,0 +1,478 @@
+<!--  Frontend -->
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYS Stock Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d0f14;
+        --surface: #161a22;
+        --border: #252b38;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --green: #00e676;
+        --yellow: #ffea00;
+        --red: #ff1744;
+        --text: #e8eaf0;
+        --muted: #6b7280;
+        --font: 'IBM Plex Sans Thai', sans-serif;
+        --mono: 'IBM Plex Mono', monospace;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+        font-size: 14px;
+        min-height: 100vh;
+      }
+
+      /* ─── HEADER ─── */
+      header {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 0 24px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        height: 56px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .logo {
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--accent);
+        letter-spacing: 0.05em;
+        white-space: nowrap;
+      }
+      .logo span {
+        color: var(--muted);
+      }
+      nav {
+        display: flex;
+        gap: 4px;
+      }
+      nav a {
+        padding: 6px 14px;
+        border-radius: 6px;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+      nav a:hover {
+        background: var(--border);
+        color: var(--text);
+      }
+      nav a.active {
+        background: var(--accent);
+        color: #000;
+      }
+      #clock {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: auto;
+      }
+
+      /* ─── LAYOUT ─── */
+      main {
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      /* ─── STAT CARDS ─── */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 20px;
+      }
+      .stat-card .label {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .stat-card .value {
+        font-size: 28px;
+        font-weight: 600;
+        font-family: var(--mono);
+        margin-top: 4px;
+      }
+      .stat-card.blue .value {
+        color: var(--accent);
+      }
+      .stat-card.warn .value {
+        color: var(--yellow);
+      }
+      .stat-card.danger .value {
+        color: var(--red);
+      }
+
+      /* ─── TOOLBAR ─── */
+      .toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .search-box {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        max-width: 420px;
+      }
+      .search-box input {
+        flex: 1;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 14px;
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 13px;
+        outline: none;
+        transition: border 0.15s;
+      }
+      .search-box input:focus {
+        border-color: var(--accent);
+      }
+      .search-box button {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 18px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: opacity 0.15s;
+      }
+      .search-box button:hover {
+        opacity: 0.85;
+      }
+      .result-info {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .result-info a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      /* ─── TABLE ─── */
+      .table-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      thead th {
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        background: var(--surface);
+        position: sticky;
+        top: 0;
+      }
+      tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: background 0.1s;
+      }
+      tbody tr:last-child {
+        border-bottom: none;
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      td {
+        padding: 10px 16px;
+        font-size: 13px;
+      }
+      code {
+        font-family: var(--mono);
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--accent);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .qty {
+        font-family: var(--mono);
+        font-weight: 600;
+      }
+      .empty {
+        padding: 48px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      /* ─── BADGES ─── */
+      .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .badge.green {
+        background: rgba(0, 230, 118, 0.15);
+        color: var(--green);
+        border: 1px solid rgba(0, 230, 118, 0.3);
+      }
+      .badge.yellow {
+        background: rgba(255, 234, 0, 0.12);
+        color: var(--yellow);
+        border: 1px solid rgba(255, 234, 0, 0.3);
+      }
+      .badge.red {
+        background: rgba(255, 23, 68, 0.15);
+        color: var(--red);
+        border: 1px solid rgba(255, 23, 68, 0.3);
+      }
+
+      /* ─── LOG ACTION TAGS ─── */
+      .action {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .action.withdraw {
+        background: rgba(255, 107, 53, 0.15);
+        color: var(--accent2);
+      }
+      .action.restock {
+        background: rgba(0, 230, 118, 0.12);
+        color: var(--green);
+      }
+
+      .section-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 12px;
+      }
+
+      @media (max-width: 768px) {
+        header {
+          padding: 0 16px;
+          gap: 12px;
+        }
+        main {
+          padding: 16px;
+        }
+        .logo span {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="logo">SYS<span>/</span>STOCK</div>
+      <nav>
+        <a
+          href="<?= ScriptApp.getService().getUrl() ?>?page=stock"
+          class="<?= page === 'stock' ? 'active' : '' ?>"
+          >📦 สต็อก</a
+        >
+        <a
+          href="<?= ScriptApp.getService().getUrl() ?>?page=delivery"
+          class="<?= page === 'delivery' ? 'active' : '' ?>"
+          >📑 นำจ่าย</a
+        >
+        <a
+          href="<?= ScriptApp.getService().getUrl() ?>?page=log"
+          class="<?= page === 'log' ? 'active' : '' ?>"
+          >📜 ประวัติ</a
+        >
+      </nav>
+      <div id="clock">—</div>
+    </header>
+
+    <main>
+      <? if (page === 'stock') { ?>
+      <div class="stats">
+        <div class="stat-card blue">
+          <div class="label">รายการทั้งหมด</div>
+          <div class="value"><?= totalItems ?></div>
+        </div>
+        <div class="stat-card warn">
+          <div class="label">ใกล้หมด</div>
+          <div class="value"><?= lowCount ?></div>
+        </div>
+        <div class="stat-card danger">
+          <div class="label">หมดแล้ว</div>
+          <div class="value"><?= outCount ?></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <form
+          class="search-box"
+          action="<?= ScriptApp.getService().getUrl() ?>"
+          method="get"
+        >
+          <input type="hidden" name="page" value="stock" />
+          <input
+            type="text"
+            name="search"
+            placeholder="ค้นหา รหัส หรือ ชื่อสินค้า..."
+            value="<?= search ?>"
+          />
+          <button type="submit">ค้นหา</button>
+        </form>
+        <span class="result-info"
+          >ทั้งหมด
+          <?= resultCount ?>
+          รายการ</span
+        >
+      </div>
+      <div class="section-label">รายการสต็อกสินค้า</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>ชื่อสินค้า</th>
+              <th>คงเหลือรวม</th>
+              <th>CBR</th>
+              <th>CCS</th>
+              <th>SKO</th>
+              <th>RYG</th>
+              <th>TRT</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?!= stockRows ?>
+          </tbody>
+        </table>
+      </div>
+
+      <? } else if (page === 'delivery') { ?>
+      <div class="section-label" style="margin-bottom: 12px">
+        รายการซีเรียลที่นำจ่ายแล้ว (จาก SERIAL_DATA)
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>รหัสสินค้า</th>
+              <th>ซีเรียล</th>
+              <th>วันที่นำจ่าย</th>
+              <th>แผนก</th>
+              <th>ผู้เบิก</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?!= deliveryRows ?>
+          </tbody>
+        </table>
+      </div>
+
+      <? } else if (page === 'log') { ?>
+      <div class="section-label">ประวัติการทำรายการล่าสุด (50 รายการ)</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>วันเวลา</th>
+              <th>ผู้ใช้</th>
+              <th>รายการ</th>
+              <th>รหัสสินค้า</th>
+              <th>จำนวน</th>
+              <th>แผนก/ชีต</th>
+              <th>คงเหลือสุทธิ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?!= logRows ?>
+          </tbody>
+        </table>
+      </div>
+      <? } ?>
+    </main>
+
+    <script>
+      // 1. CLOCK
+      function tick() {
+        const n = new Date()
+        const pad = v => String(v).padStart(2, '0')
+        const d = n.toLocaleDateString('th-TH', {
+          day: '2-digit',
+          month: 'short',
+          year: '2-digit'
+        })
+        const time =
+          pad(n.getHours()) +
+          ':' +
+          pad(n.getMinutes()) +
+          ':' +
+          pad(n.getSeconds())
+        document.getElementById('clock').textContent = d + ' | ' + time
+      }
+      tick()
+      setInterval(tick, 1000)
+
+      // 2. FIX MENU ลิงก์ไม่หลุดจาก iframe
+      document.querySelectorAll('nav a').forEach(link => {
+        link.addEventListener('click', function (e) {
+          e.preventDefault()
+          window.top.location.href = this.href
+        })
+      })
+
+      // 3. AUTO REFRESH (แก้ไข Tag ซ้อนแล้ว)
+      setInterval(function () {
+        const searchInput = document.querySelector('input[name="search"]')
+        if (searchInput && searchInput.value !== '') return
+
+        console.log('🔄 Safe Refresh')
+        const baseUrl = '<?= ScriptApp.getService().getUrl() ?>'
+        const newUrl = baseUrl + '?page=<?= page ?>&t=' + Date.now()
+        window.location.href = newUrl
+      }, 30000) // ปรับเป็น 30 วินาทีเพื่อไม่ให้โหลดบ่อยเกินไป
+    </script>
+  </body>
+</html>
