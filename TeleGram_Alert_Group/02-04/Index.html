@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SYS Stock Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #0d0f14;
+        --surface: #161a22;
+        --border: #252b38;
+        --accent: #00d4ff;
+        --accent2: #ff6b35;
+        --green: #00e676;
+        --yellow: #ffea00;
+        --red: #ff1744;
+        --text: #e8eaf0;
+        --muted: #6b7280;
+        --font: 'IBM Plex Sans Thai', sans-serif;
+        --mono: 'IBM Plex Mono', monospace;
+      }
+
+      /* Light Theme Variables */
+      body.light-theme {
+        --bg: #f4f6f8;
+        --surface: #ffffff;
+        --border: #e2e8f0;
+        --text: #1e293b;
+        --muted: #64748b;
+        --accent: #0284c7;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      h1 span {
+        color: var(--accent);
+      }
+      .clock {
+        font-family: var(--mono);
+        color: var(--muted);
+        font-size: 14px;
+        background: var(--surface);
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        transition: transform 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+      }
+      .stat-label {
+        font-size: 13px;
+        color: var(--muted);
+        font-weight: 500;
+      }
+      .stat-value {
+        font-size: 28px;
+        font-weight: 600;
+        font-family: var(--mono);
+      }
+      .stat-value.red {
+        color: var(--red);
+      }
+      .stat-value.yellow {
+        color: var(--yellow);
+      }
+
+      /* Control Bar (Filters & Tools) */
+      .control-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center;
+        background: var(--surface);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+      }
+      .search-box {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+        min-width: 250px;
+      }
+      .search-input {
+        flex: 1;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-family: var(--font);
+        font-size: 14px;
+      }
+      .btn {
+        background: var(--accent);
+        color: #000;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-family: var(--font);
+        font-weight: 500;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.9;
+        transform: scale(0.98);
+      }
+      .btn-outline {
+        background: transparent;
+        color: var(--text);
+        border: 1px solid var(--border);
+      }
+      .btn-outline:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .table-container {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      th,
+      td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+        z-index: 10;
+        white-space: nowrap;
+      }
+      tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      body.light-theme tbody tr:hover {
+        background: rgba(0, 0, 0, 0.02);
+      }
+
+      code {
+        font-family: var(--mono);
+        color: var(--accent2);
+        background: rgba(255, 107, 53, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+      .qty {
+        font-family: var(--mono);
+        font-weight: 500;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .badge.green {
+        background: rgba(0, 230, 118, 0.1);
+        color: var(--green);
+      }
+      .badge.yellow {
+        background: rgba(255, 234, 0, 0.1);
+        color: var(--yellow);
+      }
+      .badge.red {
+        background: rgba(255, 23, 68, 0.1);
+        color: var(--red);
+      }
+
+      /* Responsive Table for Mobile */
+      @media (max-width: 768px) {
+        .stats-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .table-container table {
+          font-size: 13px;
+        }
+        thead {
+          display: none;
+        }
+        tbody tr {
+          display: block;
+          padding: 12px;
+          border-bottom: 4px solid var(--bg);
+        }
+        td {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 4px;
+          border-bottom: 1px solid var(--border);
+        }
+        td:last-child {
+          border-bottom: none;
+        }
+        td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: var(--muted);
+          font-size: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>
+        📦 <span>SYS</span> Stock
+        <small style="font-size: 10px; color: gray">(V2-111-OK)</small>
+      </h1>
+      <div id="clock" class="clock">00:00:00</div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">Total Items</span
+        ><span class="stat-value"><?= totalItems ?></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Low Stock</span
+        ><span class="stat-value yellow"><?= lowCount ?></span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Out of Stock</span
+        ><span class="stat-value red"><?= outCount ?></span>
+      </div>
+    </div>
+
+    <div class="control-bar">
+      <form
+        class="search-box"
+        method="get"
+        action="<?= ScriptApp.getService().getUrl() ?>"
+      >
+        <input type="hidden" name="page" value="stock" />
+        <input
+          type="text"
+          name="search"
+          class="search-input"
+          placeholder="🔍 ค้นหาชื่อ หรือ รหัส..."
+          value="<?= search ?>"
+        />
+        <button type="submit" class="btn">ค้นหา</button>
+      </form>
+
+      <!-- ทำหลายวัน
+      <select id="statusFilter" class="search-input" style="flex: 0.5;">
+        <option value="all">🚦 สถานะทั้งหมด</option>
+        <option value="status-green">✅ ปกติ</option>
+        <option value="status-yellow">⚠️ ใกล้หมด</option>
+        <option value="status-red">❌ หมด</option>
+      </select>
+//-->
+
+      <button id="exportBtn" class="btn btn-outline">📥 Export CSV</button>
+      <button id="themeToggle" class="btn btn-outline">☀️ Light</button>
+    </div>
+
+    <div class="table-container">
+      <table id="stockTable">
+        <thead>
+          <tr>
+            <th>ID / Material Code</th>
+            <th style="text-align: center">QR Code</th>
+            <th>Description</th>
+            <th>Total QTY</th>
+            <th>CBR</th>
+            <th>CCS</th>
+            <th>SKO</th>
+            <th>RYG</th>
+            <th>TRT</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?!= stockRows ?>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      // 1. CLOCK
+      setInterval(() => {
+        const d = new Date()
+        document.getElementById('clock').textContent =
+          d.toLocaleDateString('th-TH', {
+            day: '2-digit',
+            month: 'short',
+            year: '2-digit'
+          }) +
+          ' | ' +
+          d.toLocaleTimeString()
+      }, 1000)
+
+      // Feature 6: Dark/Light Theme Toggle
+      const toggleBtn = document.getElementById('themeToggle')
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light-theme')
+        toggleBtn.textContent = '🌙 Dark'
+      }
+      toggleBtn.addEventListener('click', () => {
+        const isDark = document.body.classList.toggle('light-theme')
+        localStorage.setItem('theme', isDark ? 'light' : 'dark')
+        toggleBtn.textContent = isDark ? '🌙 Dark' : '☀️ Light'
+      })
+
+      // Feature 7: Advanced Status Filter
+      document
+        .getElementById('statusFilter')
+        .addEventListener('change', function (e) {
+          const filterVal = e.target.value
+          const rows = document.querySelectorAll('#stockTable tbody tr')
+          rows.forEach(row => {
+            if (filterVal === 'all') {
+              row.style.display = ''
+            } else {
+              row.style.display = row.classList.contains(filterVal)
+                ? ''
+                : 'none'
+            }
+          })
+        })
+
+      // Feature 9: Barcode Scanner (Highlight row)
+      const barcodeInput = document.getElementById('barcodeInput')
+      barcodeInput.addEventListener('change', e => {
+        const code = e.target.value.trim().toLowerCase()
+        if (!code) return
+
+        let found = false
+        // เปลี่ยนมาหาจาก td ช่องแรก (Index 0) แทนการหาแท็ก code
+        document.querySelectorAll('#stockTable tbody tr').forEach(row => {
+          row.style.backgroundColor = '' // reset color
+          const firstCellText = row.cells[0].textContent.toLowerCase()
+
+          if (firstCellText.includes(code)) {
+            row.style.backgroundColor = document.body.classList.contains(
+              'light-theme'
+            )
+              ? 'rgba(0, 230, 118, 0.3)'
+              : 'rgba(0, 230, 118, 0.15)'
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            found = true
+          }
+        })
+
+        if (!found) alert('❌ ไม่พบรหัสสินค้า: ' + code)
+        e.target.value = '' // clear input
+      })
+
+      // Feature 5: Export to CSV
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const table = document.getElementById('stockTable')
+        const rows = table.querySelectorAll('tr')
+        let csv = []
+
+        rows.forEach(row => {
+          if (row.style.display === 'none') return // Skip hidden rows
+          let cols = []
+          row.querySelectorAll('td, th').forEach((col, index) => {
+            if (index !== 1) {
+              // Skip QR Code image column
+              let text = col.innerText.replace(/"/g, '""')
+              cols.push(`"${text}"`)
+            }
+          })
+          csv.push(cols.join(','))
+        })
+
+        const blob = new Blob(['\uFEFF' + csv.join('\n')], {
+          type: 'text/csv;charset=utf-8;'
+        })
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download =
+          'SYS-Stock-' + new Date().toISOString().split('T')[0] + '.csv'
+        a.click()
+      })
+    </script>
+  </body>
+</html>
