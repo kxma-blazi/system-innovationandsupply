@@ -20,16 +20,17 @@ function getAllDashboardData() {
 
     const ss = SpreadsheetApp.openById(SHEET_ID);
     const result = {
-      ppe: getPPEData(ss),
+      ppe:      getPPEData(ss),
       training: getTrainingData(ss),
-      auditPM: getAuditPMData(ss),
+      auditPM:  getAuditPMData(ss),
       auditNode: getAuditCMNodeData(ss),
-      auditOFC: getAuditCMOFCData(ss),
-      updatedAt: Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm"),
+      auditOFC:  getAuditCMOFCData(ss),
+      updatedAt: Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm")
     };
 
     cache.put("qac_all", JSON.stringify(result), 300);
     return result;
+
   } catch (e) {
     Logger.log("getAllDashboardData Error: " + e);
     return { error: e.toString() };
@@ -49,20 +50,14 @@ function getPPEData(ss) {
 
   // 1. ดึงแถวสุดท้ายจริง ๆ ของชีต
   const lastRow = sheet.getLastRow();
-
+  
   // ป้องกันกรณีชีตว่าง หรือมีแต่หัวข้อ (ข้อมูลจริงเริ่มแถว 4)
   if (lastRow < 4) {
-    return {
-      summary: {
-        complete: 0,
-        incomplete: 0,
-        total: 0,
-        waitingAudit: 0,
-        completePercent: 0,
-      },
-      byProvince: {},
-      rounds: { r1: 0, r2: 0, r3: 0, total: 0 },
-      tableRows: [],
+    return { 
+      summary: { complete: 0, incomplete: 0, total: 0, waitingAudit: 0, completePercent: 0 }, 
+      byProvince: {}, 
+      rounds: { r1: 0, r2: 0, r3: 0, total: 0 }, 
+      tableRows: [] 
     };
   }
 
@@ -71,26 +66,22 @@ function getPPEData(ss) {
 
   // ─── Summary จากแถวที่ 1 และ 2 ──────────────
   const summary = {
-    complete: Number(data[0][4]) || 0,
-    incomplete: Number(data[0][6]) || 0,
-    total: Number(data[0][9]) || 0,
-    waitingAudit: Number(data[1][4]) || 0,
+    complete:     Number(data[0][4]) || 0,
+    incomplete:   Number(data[0][6]) || 0,
+    total:         Number(data[0][9]) || 0,
+    waitingAudit: Number(data[1][4]) || 0
   };
-  summary.completePercent =
-    summary.total > 0
-      ? Math.round((summary.complete / summary.total) * 1000) / 10
-      : 0;
+  summary.completePercent = summary.total > 0
+    ? Math.round((summary.complete / summary.total) * 1000) / 10 : 0;
 
   // ─── นับรายจังหวัด + ผลตรวจแต่ละรอบ (เริ่มแถวที่ 4 คือ index 3) ────────
   const byProvince = {};
-  let r1Pass = 0,
-    r2Pass = 0,
-    r3Pass = 0;
+  let r1Pass = 0, r2Pass = 0, r3Pass = 0;
   const tableRows = [];
 
   for (let i = 3; i < data.length; i++) {
     const row = data[i];
-
+    
     // ตรวจสอบว่าคอลัมน์ A (ลำดับ) ต้องมีค่า และไม่ใช่ค่าว่างหรือ "nan"
     const rowId = String(row[0] || "").trim();
     if (!rowId || rowId === "" || rowId === "nan") continue;
@@ -102,16 +93,10 @@ function getPPEData(ss) {
     }
 
     // ผลการตรวจ (R1=Col Z, R2=Col AB, R3=Col AF)
-    const r1 = String(row[25] || "")
-      .trim()
-      .toUpperCase();
-    const r2 = String(row[27] || "")
-      .trim()
-      .toUpperCase();
-    const r3 = String(row[31] || "")
-      .trim()
-      .toUpperCase();
-
+    const r1 = String(row[25] || "").trim().toUpperCase();
+    const r2 = String(row[27] || "").trim().toUpperCase();
+    const r3 = String(row[31] || "").trim().toUpperCase();
+    
     if (r1 === "PASS") r1Pass++;
     if (r2 === "PASS") r2Pass++;
     if (r3 === "PASS") r3Pass++;
@@ -119,19 +104,17 @@ function getPPEData(ss) {
     // ฟังก์ชันช่วยจัดรูปแบบวันที่
     const fmtDate = (v) => {
       if (!v || String(v).trim() === "" || String(v).trim() === "-") return "-";
-      try {
+      try { 
         // ถ้าเป็น Object Date อยู่แล้วให้ Format เลย ถ้าไม่ใช่ให้ลองแปลงก่อน
-        const d = v instanceof Date ? v : new Date(v);
-        return Utilities.formatDate(d, "GMT+7", "dd/MM/yy");
-      } catch (e) {
-        return String(v).trim();
+        const d = (v instanceof Date) ? v : new Date(v);
+        return Utilities.formatDate(d, "GMT+7", "dd/MM/yy"); 
+      } catch(e) { 
+        return String(v).trim(); 
       }
     };
 
     const resultBadge = (val) => {
-      const s = String(val || "")
-        .trim()
-        .toUpperCase();
+      const s = String(val || "").trim().toUpperCase();
       if (s === "PASS") return "PASS";
       if (s === "-" || s === "") return "-";
       return s.substring(0, 15); // ตัดข้อความ Remark ให้ไม่ยาวเกินไป
@@ -139,19 +122,19 @@ function getPPEData(ss) {
 
     // เก็บข้อมูลลง Array เพื่อส่งไปหน้าบ้าน
     tableRows.push({
-      no: rowId,
+      no:       rowId,
       province: prov,
-      team: String(row[2] || "").trim(),
-      name: String(row[8] || "").trim(),
+      team:     String(row[2] || "").trim(),
+      name:     String(row[8] || "").trim(),
       workType: String(row[4] || "").trim(),
       mateline: String(row[5] || "").trim(),
       position: String(row[6] || "").trim(),
-      r1Date: fmtDate(row[24]),
+      r1Date:   fmtDate(row[24]),
       r1Result: resultBadge(row[25]),
-      r2Date: fmtDate(row[26]),
+      r2Date:   fmtDate(row[26]),
       r2Result: resultBadge(row[27]),
-      r3Date: fmtDate(row[30]),
-      r3Result: resultBadge(row[31]),
+      r3Date:   fmtDate(row[30]),
+      r3Result: resultBadge(row[31])
     });
   }
 
@@ -159,13 +142,11 @@ function getPPEData(ss) {
     summary,
     byProvince,
     rounds: {
-      r1: r1Pass,
-      r2: r2Pass,
-      r3: r3Pass,
-      total: summary.total,
+      r1: r1Pass, r2: r2Pass, r3: r3Pass,
+      total: summary.total
     },
     // ปรับเพิ่มจำนวนแถวที่จะแสดงหน้าเว็บตามต้องการ (เช่น 500 หรือเอา slice ออกเลย)
-    tableRows: tableRows.slice(0, 500),
+    tableRows: tableRows.slice(0, 500) 
   };
 }
 
@@ -181,35 +162,33 @@ function getTrainingData(ss) {
   // data[1][1]=173 total, [1][2]=52 Node, [1][3]=101 OFC, [1][4]=20 PM
   const summary = {
     total: Number(data[1][1]) || 0,
-    node: Number(data[1][2]) || 0,
-    ofc: Number(data[1][3]) || 0,
-    pm: Number(data[1][4]) || 0,
+    node:  Number(data[1][2]) || 0,
+    ofc:   Number(data[1][3]) || 0,
+    pm:    Number(data[1][4]) || 0
   };
 
   // G course: data[1][27]=164 trained, data[1][28]=9 waiting
   // EC course: data[1][31]=39 trained, data[1][32]=134 waiting
-  const gTrained = Number(data[1][27]) || 0;
-  const gWaiting = Number(data[1][28]) || 0;
+  const gTrained  = Number(data[1][27]) || 0;
+  const gWaiting  = Number(data[1][28]) || 0;
   const ecTrained = Number(data[1][31]) || 0;
   const ecWaiting = Number(data[1][32]) || 0;
 
-  const gTotal = gTrained + gWaiting || 1;
+  const gTotal  = gTrained + gWaiting  || 1;
   const ecTotal = ecTrained + ecWaiting || 1;
 
   return {
     summary,
     gCourse: {
-      trained: gTrained,
-      waiting: gWaiting,
+      trained: gTrained, waiting: gWaiting,
       total: gTrained + gWaiting,
-      percent: Math.round((gTrained / gTotal) * 1000) / 10,
+      percent: Math.round(gTrained / gTotal * 1000) / 10
     },
     ecCourse: {
-      trained: ecTrained,
-      waiting: ecWaiting,
+      trained: ecTrained, waiting: ecWaiting,
       total: ecTrained + ecWaiting,
-      percent: Math.round((ecTrained / ecTotal) * 1000) / 10,
-    },
+      percent: Math.round(ecTrained / ecTotal * 1000) / 10
+    }
   };
 }
 
@@ -223,7 +202,7 @@ function getAuditPMData(ss) {
   const data = sheet.getRange(1, 1, 6, 23).getValues();
 
   // Summary: data[1][5]=PM NodeB=7, [1][6]=PM Bignode=2, [1][7]=Clear def=1
-  const nodeB = Number(data[1][5]) || 0;
+  const nodeB   = Number(data[1][5]) || 0;
   const bignode = Number(data[1][6]) || 0;
   const clearDf = Number(data[1][7]) || 0;
 
@@ -233,29 +212,26 @@ function getAuditPMData(ss) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
     const raw = data[3][col];
-    const pct = typeof raw === "number" ? Math.round(raw * 100) : null;
+    const pct  = (typeof raw === "number") ? Math.round(raw * 100) : null;
     teams.push({
       name,
       percent: pct,
       status: pct === null ? "Pending" : pct >= 100 ? "Done" : "Not Done",
-      remark: String(data[3][col + 1] || "").trim(),
+      remark: String(data[3][col + 1] || "").trim()
     });
   }
 
-  const done = teams.filter((t) => t.status === "Done").length;
-  const notDone = teams.filter((t) => t.status === "Not Done").length;
+  const done    = teams.filter(t => t.status === "Done").length;
+  const notDone = teams.filter(t => t.status === "Not Done").length;
 
   return {
     summary: {
       totalTeams: teams.length,
-      nodeB,
-      bignode,
-      clearDf,
-      done,
-      notDone,
-      totalItems: Number(data[4][0]) || 0,
+      nodeB, bignode, clearDf,
+      done, notDone,
+      totalItems: Number(data[4][0]) || 0
     },
-    teams,
+    teams
   };
 }
 
@@ -271,11 +247,11 @@ function getAuditCMNodeData(ss) {
   // Summary: data[1][5]=WAH=22, [1][6]=OG=8, [1][7]=inspected=19, [1][8]=pending=11
   const summary = {
     totalTeams: 30,
-    wah: Number(data[1][5]) || 0,
-    og: Number(data[1][6]) || 0,
-    inspected: Number(data[1][7]) || 0,
-    pending: Number(data[1][8]) || 0,
-    totalItems: Number(data[4][0]) || 0,
+    wah:        Number(data[1][5]) || 0,
+    og:         Number(data[1][6]) || 0,
+    inspected:  Number(data[1][7]) || 0,
+    pending:    Number(data[1][8]) || 0,
+    totalItems: Number(data[4][0]) || 0
   };
 
   const teams = [];
@@ -283,11 +259,11 @@ function getAuditCMNodeData(ss) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
     const raw = data[3][col];
-    const pct = typeof raw === "number" ? Math.round(raw * 100) : null;
+    const pct = (typeof raw === "number") ? Math.round(raw * 100) : null;
     teams.push({
       name,
       percent: pct,
-      status: pct === null ? "Pending" : pct >= 100 ? "Done" : "Not Done",
+      status: pct === null ? "Pending" : pct >= 100 ? "Done" : "Not Done"
     });
   }
 
@@ -306,11 +282,11 @@ function getAuditCMOFCData(ss) {
   // Summary: data[1][5]=2MP=43, [1][6]=3MP=5, [1][7]=inspected=22, [1][8]=pending=26
   const summary = {
     totalTeams: 48,
-    twoMP: Number(data[1][5]) || 0,
-    threeMP: Number(data[1][6]) || 0,
-    inspected: Number(data[1][7]) || 0,
-    pending: Number(data[1][8]) || 0,
-    totalItems: Number(data[4][0]) || 0,
+    twoMP:      Number(data[1][5]) || 0,
+    threeMP:    Number(data[1][6]) || 0,
+    inspected:  Number(data[1][7]) || 0,
+    pending:    Number(data[1][8]) || 0,
+    totalItems: Number(data[4][0]) || 0
   };
 
   const teams = [];
@@ -318,13 +294,14 @@ function getAuditCMOFCData(ss) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
     const raw = data[3][col];
-    const pct = typeof raw === "number" ? Math.round(raw * 100) : null;
+    const pct = (typeof raw === "number") ? Math.round(raw * 100) : null;
     teams.push({
       name,
       percent: pct,
-      status: pct === null ? "Pending" : pct >= 100 ? "Done" : "Not Done",
+      status: pct === null ? "Pending" : pct >= 100 ? "Done" : "Not Done"
     });
   }
 
   return { summary, teams };
 }
+
