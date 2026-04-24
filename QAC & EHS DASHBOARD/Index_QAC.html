@@ -181,20 +181,39 @@
         transition: width 1.2s ease;
       }
 
+      /* ── Team Grid ── */
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+        gap: 14px;
+      }
       .team-card {
         background: #ffffff;
         border: 1px solid var(--border);
         padding: 15px;
         border-radius: 12px;
         border-top: 4px solid var(--border);
-        transition: 0.2s;
+        transition: box-shadow 0.2s;
         text-align: center;
+      }
+      .team-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       }
       .team-card.done {
         border-top-color: var(--green);
       }
       .team-card.pending {
         border-top-color: var(--yellow);
+      }
+      .team-card .card-name {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .team-card .card-score {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
       }
 
       .table-wrap {
@@ -926,40 +945,67 @@
         document.getElementById('training-main').innerHTML = html
       }
 
-      function renderTeams(containerId, kpiId, data = {}) {
-        // KPI
-        document.getElementById(kpiId).innerHTML =
-          kpiCard('👥 ทีมทั้งหมด', data.summary?.total || 0, 'accent') +
-          kpiCard('✅ ผ่าน', data.summary?.done || 0, 'green') +
-          kpiCard('⏳ รอดำเนินการ', data.summary?.pending || 0, 'yellow')
+      function renderTeams(containerId, kpiId, data) {
+        const container = document.getElementById(containerId)
+        const kpi = document.getElementById(kpiId)
+        if (!container || !kpi || !data) return
 
-        // TEAMS
-        const teams = data.teams || []
+        const s = data.summary || {}
 
-        if (teams.length === 0) {
-          document.getElementById(containerId).innerHTML =
-            "<div style='color:var(--muted)'>ไม่มีข้อมูล</div>"
-          return
-        }
-
-        const html = teams
-          .map(
-            t => `
-    <div class="team-card ${t.status === 'done' ? 'done' : 'pending'}">
-      <div style="font-weight:600">${t.name}</div>
-      <div style="font-size:12px;color:var(--muted)">
-        ${t.done || 0}/${t.total || 0}
+        // ปรับการแสดงผล KPI ให้แยกช่องชัดเจน
+        kpi.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+      <div class="kpi-card" style="background: var(--surface2); padding:10px; border-radius:8px;">
+        <div style="font-size:12px; color:var(--muted)">จำนวนทีมทั้งหมด</div>
+        <div style="font-size:20px; font-weight:600; color:var(--blue)">${
+          s.totalTeams || 0
+        }</div>
+      </div>
+      <div class="kpi-card" style="background: #fff4e5; padding:10px; border-radius:8px; border-left:4px solid var(--yellow);">
+        <div style="font-size:12px; color:var(--muted)">รอแก้ Def.</div>
+        <div style="font-size:18px; font-weight:600;">${
+          s.waitingDef || 0
+        } <span style="font-size:12px; color:var(--yellow)">(${
+          s.pctWaitingDef
+        }%)</span></div>
+      </div>
+      <div class="kpi-card" style="background: #e6fffa; padding:10px; border-radius:8px; border-left:4px solid var(--green);">
+        <div style="font-size:12px; color:var(--muted)">Complete 100%</div>
+        <div style="font-size:18px; font-weight:600;">${
+          s.complete100 || 0
+        } <span style="font-size:12px; color:var(--green)">(${
+          s.pctComplete100
+        }%)</span></div>
+      </div>
+      <div class="kpi-card" style="background: #f0f5ff; padding:10px; border-radius:8px; border-left:4px solid var(--blue);">
+        <div style="font-size:12px; color:var(--muted)">รอตรวจเครื่องมือ</div>
+        <div style="font-size:18px; font-weight:600;">${
+          s.waitingAudit || 0
+        } <span style="font-size:12px; color:var(--blue)">(${
+          s.pctWaiting
+        }%)</span></div>
       </div>
     </div>
   `
-          )
-          .join('')
 
-        document.getElementById(containerId).innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;">
-      ${html}
-    </div>
-  `
+        // ส่วนรายชื่อทีมด้านล่าง
+        const teams = data.teams || []
+        if (teams.length === 0) {
+          container.innerHTML = '<div style="padding:20px; color:var(--muted)">ไม่พบข้อมูลทีม</div>'
+          return
+        }
+
+        container.innerHTML = teams
+          .map(t => {
+            const score = Math.round(parseFloat(t.done || 0))
+            return `
+              <div class="team-card ${t.status === 'done' ? 'done' : 'pending'}">
+                <div class="card-name">${t.name}</div>
+                <div class="card-score">${score}/100</div>
+              </div>
+            `
+          })
+          .join('')
       }
 
       function progressBar(label, val, total, color) {
