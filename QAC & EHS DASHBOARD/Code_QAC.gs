@@ -1,5 +1,5 @@
 // ============================================================
-// QAC & EHS DASHBOARD — SERVER SIDE (Code_QAC.gs)
+// SYS-QAC & EHS DASHBOARD — SERVER SIDE (Code_QAC.gs)
 // ============================================================
 
 function doGet(e) {
@@ -270,105 +270,97 @@ function getAuditPMData(ss) {
   const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_PM);
   if (!sheet) return { summary: {}, teams: [] };
 
-  const data = sheet.getRange(1, 1, 6, 23).getValues();
+  const data = sheet.getRange(1, 1, 6, 100).getValues(); 
+
+  const summary = {
+    totalTeams:   Number(data[2][7]) || 0, // H3
+    waitingDef:   Number(data[2][8]) || 0, // I3
+    complete100:  Number(data[2][9]) || 0, // J3
+    waitingAudit: Number(data[2][10]) || 0, // K3
+    pctWaitingDef:  Math.round((data[3][8] || 0) * 100),
+    pctComplete100: Math.round((data[3][9] || 0) * 100),
+    pctWaiting:     Math.round((data[3][10] || 0) * 100)
+  };
 
   const teams = [];
-
-  for (let col = 2; col <= 20; col += 2) {
+  for (let col = 2; col < data[4].length; col += 2) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
-
-    // ✅ แก้ไข: ใช้ parseAuditPercent แทน typeof check เดิม
     const pct = parseAuditPercent(data[3][col]);
-
-    teams.push({
-      name,
-      done: pct,
-      total: 100,
-      status: pct >= 100 ? "done" : "pending",
-    });
+    teams.push({ name, done: pct, total: 100, status: pct >= 100 ? "done" : "pending" });
   }
+  summary.total = teams.length;
+  summary.done = teams.filter(t => t.status === "done").length;
+  summary.pending = teams.filter(t => t.status !== "done").length;
 
-  return {
-    summary: {
-      total: teams.length,
-      done: teams.filter((t) => t.status === "done").length,
-      pending: teams.filter((t) => t.status !== "done").length,
-    },
-    teams,
-  };
+  return { summary, teams };
 }
 
 // ============================================================
-// 4. AUDIT TOOLS CM NODE
+// 4. AUDIT TOOLS CM NODE (แก้ไขชื่อฟังก์ชันและชื่อชีตให้ถูกต้อง)
 // ============================================================
 function getAuditCMNodeData(ss) {
   const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_NODE);
   if (!sheet) return { summary: {}, teams: [] };
 
-  const data = sheet.getRange(1, 1, 6, 63).getValues();
+  // ดึงถึงคอลัมน์ K (Index 10)
+  const data = sheet.getRange(1, 1, 6, 11).getValues();
+
+  const summary = {
+    totalTeams:   data[2][7] || 0,  // H3 -> 32
+    waitingDef:   data[2][8] || 0,  // I3 -> 28
+    complete100:  data[2][9] || 0,  // J3 -> 1
+    waitingAudit: data[2][10] || 0, // K3 -> 3
+    // ดึงค่า % จากแถว 4 (Index 3)
+    pctWaitingDef:  (Number(data[3][8]) * 100).toFixed(2), // 87.50
+    pctComplete100: (Number(data[3][9]) * 100).toFixed(2), // 3.13
+    pctWaiting:     (Number(data[3][10]) * 100).toFixed(2) // 9.38
+  };
 
   const teams = [];
-
-  for (let col = 2; col <= 60; col += 2) {
+  // ดึงรายชื่อทีมจากแถว 5 คอลัมน์ C (Index 2) เป็นต้นไป
+  for (let col = 2; col < data[4].length; col += 2) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
-
-    // ✅ แก้ไข: ใช้ parseAuditPercent แทน typeof check เดิม
     const pct = parseAuditPercent(data[3][col]);
-
-    teams.push({
-      name,
-      done: pct,
-      total: 100,
-      status: pct >= 100 ? "done" : "pending",
-    });
+    teams.push({ name, done: pct, status: pct >= 100 ? "done" : "pending" });
   }
 
-  return {
-    summary: {
-      total: teams.length,
-      done: teams.filter((t) => t.status === "done").length,
-      pending: teams.filter((t) => t.status !== "done").length,
-    },
-    teams,
-  };
+  return { summary, teams };
 }
 
 // ============================================================
-// 5. AUDIT TOOLS CM OFC
+// 5. AUDIT TOOLS CM OFC (แก้ไขให้ดึงจากชีต OFC)
 // ============================================================
 function getAuditCMOFCData(ss) {
-  const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_OFC);
+  const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_OFC); // ดึงจากชีต OFC
   if (!sheet) return { summary: {}, teams: [] };
 
-  const data = sheet.getRange(1, 1, 6, 99).getValues();
+  const data = sheet.getRange(1, 1, 6, 100).getValues();
+
+  const summary = {
+    totalTeams:   Number(data[2][7]) || 0, // H3
+    waitingDef:   Number(data[2][8]) || 0, // I3
+    complete100:  Number(data[2][9]) || 0, // J3
+    waitingAudit: Number(data[2][10]) || 0, // K3
+    pctWaitingDef:  Math.round((data[3][8] || 0) * 100),
+    pctComplete100: Math.round((data[3][9] || 0) * 100),
+    pctWaiting:     Math.round((data[3][10] || 0) * 100)
+  };
 
   const teams = [];
-
-  for (let col = 2; col <= 96; col += 2) {
+  for (let col = 2; col < data[4].length; col += 2) {
     const name = String(data[4][col] || "").trim();
     if (!name) continue;
-
-    // ✅ แก้ไข: ใช้ parseAuditPercent แทน typeof check เดิม
     const pct = parseAuditPercent(data[3][col]);
-
-    teams.push({
-      name,
-      done: pct,
-      total: 100,
-      status: pct >= 100 ? "done" : "pending",
-    });
+    teams.push({ name, done: pct, total: 100, status: pct >= 100 ? "done" : "pending" });
   }
+  
+  summary.total = teams.length;
+  summary.done = teams.filter(t => t.status === "done").length;
+  summary.pending = teams.filter(t => t.status !== "done").length;
 
-  return {
-    summary: {
-      total: teams.length,
-      done: teams.filter((t) => t.status === "done").length,
-      pending: teams.filter((t) => t.status !== "done").length,
-    },
-    teams,
-  };
+  return { summary, teams };
 }
 
 function getVersion() {
@@ -376,4 +368,29 @@ function getVersion() {
   const version = prop.getProperty("DATA_VERSION");
 
   return Number(version) || 0;
+}
+
+
+// ============================================================
+// DEBUG — ลบทิ้งหลัง debug เสร็จ
+// ============================================================
+function debugNodeData() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_NODE);
+  const data = sheet.getRange(1, 1, 6, 63).getValues();
+
+  Logger.log("Row3 H-K: " + data[2][7] + ", " + data[2][8] + ", " + data[2][9] + ", " + data[2][10]);
+  Logger.log("Row4 H-J: " + data[3][7] + ", " + data[3][8] + ", " + data[3][9]);
+  Logger.log("Row5 col2: " + data[4][2]);
+}
+
+function clearAndDebug() {
+  CacheService.getScriptCache().remove("qac_all");
+  debugNodeData();
+}
+
+function testNode() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const result = getAuditCMNodeData(ss);
+  Logger.log(JSON.stringify(result.summary));
 }
