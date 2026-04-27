@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QAC & EHS Dashboard Pro</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --surface: #f8fafc;
+        --surface2: #f1f5f9;
+        --border: #e2e8f0;
+        --accent: #00b4d8;
+        --accent2: #ff6b35;
+        --green: #10b981;
+        --yellow: #f59e0b;
+        --red: #ef4444;
+        --blue: #3b82f6;
+        --purple: #8b5cf6;
+        --text: #1e293b;
+        --muted: #64748b;
+        --font: 'IBM Plex Sans Thai', sans-serif;
+        --mono: 'IBM Plex Mono', monospace;
+        --sidebar-width: 200px;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      header {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+        padding: 0 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 100px;
+        z-index: 100;
+      }
+
+      .logo-section {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .logo-img {
+        height: 70px;
+        width: auto;
+        border-radius: 12px;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        transition: transform 0.3s ease;
+      }
+      .logo-img:hover {
+        transform: scale(1.05);
+      }
+
+      .main-wrapper {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        padding: 20px 12px;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .tab-btn {
+        padding: 14px 18px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        text-align: left;
+        border-radius: 12px;
+        transition: 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+        font-weight: 500;
+      }
+      .tab-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--text);
+      }
+      .tab-btn.active {
+        color: var(--accent);
+        background: #ffffff;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        font-weight: 600;
+      }
+
+      .content-area {
+        flex: 1;
+        padding: 25px;
+        overflow-y: auto;
+        background: #fdfdfd;
+      }
+      .container {
+        max-width: 1300px;
+        margin: 0 auto;
+      }
+
+      .tab-panel {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 25px;
+      }
+      .panel {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+      }
+      .panel-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-left: 4px solid var(--accent);
+        padding-left: 10px;
+      }
+
+      .pg-track {
+        background: var(--surface2);
+        height: 12px;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .pg-fill {
+        height: 100%;
+        transition: width 1.2s ease;
+      }
+
+      /* ── Team Grid ── */
+      .team-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+        gap: 14px;
+      }
+      .team-card {
+        background: #ffffff;
+        border: 1px solid var(--border);
+        padding: 15px;
+        border-radius: 12px;
+        border-top: 4px solid var(--border);
+        transition: box-shadow 0.2s;
+        text-align: center;
+      }
+      .team-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      }
+      .team-card.done {
+        border-top-color: var(--green);
+      }
+      .team-card.pending {
+        border-top-color: var(--yellow);
+      }
+      .team-card .card-name {
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .team-card .card-score {
+        font-size: 13px;
+        color: var(--muted);
+        margin-top: 6px;
+      }
+
+      .table-wrap {
+        overflow: auto;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: #ffffff;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+      }
+      th {
+        background: var(--surface2);
+        padding: 14px;
+        font-size: 12px;
+        text-align: left;
+        color: var(--text);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--text);
+      }
+      tr:hover td {
+        background: var(--surface);
+      }
+
+      /* ✅ แก้ไข Loader และ Spinner */
+      #loader {
+        position: fixed;
+        inset: 0;
+        background: #ffffff;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .spinner {
+        width: 45px;
+        height: 45px;
+        border: 4px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* ✅ แก้ไขจุดที่เป็นปัญหา: Donut Chart บังจอ */
+      .pie-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 10px;
+        width: 100%;
+        overflow: hidden;
+      }
+      .pie-chart {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        position: relative;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin: 0 auto;
+      }
+      .pie-chart::after {
+        content: '';
+        position: absolute;
+        inset: 35px;
+        background: #ffffff;
+        border-radius: 50%;
+        z-index: 2;
+      }
+      .pie-legend {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 15px;
+        width: 100%;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: var(--text);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+      }
+
+      #clock {
+        background: #ffffff;
+        color: var(--text);
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="loader">
+      <div class="spinner"></div>
+      <p style="margin-top: 15px; color: var(--muted); font-size: 14px">
+        กำลังรวบรวมข้อมูล Dashboard...
+      </p>
+    </div>
+
+    <header>
+      <div class="logo-section">
+        <img
+          src="https://lh3.googleusercontent.com/d/1FjQ7AKFlQAlrZ3PS5Xapoy5YDke_tUl8"
+          alt="Logo"
+          class="logo-img"
+        />
+        <div
+          style="
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: var(--text);
+          "
+        >
+          🛡️ QAC & EHS <span style="color: var(--accent)">DASHBOARD</span>
+        </div>
+      </div>
+      <div
+        id="clock"
+        style="
+          font-family: var(--mono);
+          padding: 8px 20px;
+          border-radius: 20px;
+          font-size: 15px;
+        "
+      >
+        00:00:00
+      </div>
+    </header>
+
+    <div class="main-wrapper">
+      <nav class="sidebar">
+        <button class="tab-btn active" onclick="switchTab('ppe', this)">
+          🦺 PPE Inspec
+        </button>
+        <button class="tab-btn" onclick="switchTab('training', this)">
+          📚 Training
+        </button>
+        <button class="tab-btn" onclick="switchTab('pm', this)">
+          🔧 Audit PM
+        </button>
+        <button class="tab-btn" onclick="switchTab('node', this)">
+          📡 CM Node
+        </button>
+        <button class="tab-btn" onclick="switchTab('ofc', this)">
+          🔌 CM OFC
+        </button>
+        <div style="flex: 1"></div>
+        <button class="tab-btn" onclick="switchTab('contact', this)">
+          💬 ติดต่อเรา
+        </button>
+      </nav>
+
+      <main class="content-area">
+        <div class="container">
+          <div id="tab-ppe" class="tab-panel active">
+            <div id="ppe-kpi" class="kpi-grid"></div>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1.5fr;
+                gap: 20px;
+                margin-bottom: 25px;
+              "
+            >
+              <div class="panel">
+                <div class="panel-title">📍 ตรวจแยกรายจังหวัด (Top 10)</div>
+                <div id="ppe-prov-chart"></div>
+              </div>
+              <div class="panel">
+                <div class="panel-title">📊 ความคืบหน้าการตรวจรายรอบ</div>
+                <div id="ppe-rounds-chart" class="progress-list"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-title">📋 ตารางสรุปผลการตรวจสอบ PPE</div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Mateline</th>
+                      <th>ชื่อ-สกุล</th>
+                      <th>จังหวัด</th>
+                      <th>ทีม</th>
+                      <th>R1</th>
+                      <th>R2</th>
+                      <th>R3</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ppe-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-training" class="tab-panel">
+            <div id="training-kpi" class="kpi-grid"></div>
+            <div class="panel">
+              <div class="panel-title">📚 รายละเอียดหลักสูตรการอบรม</div>
+              <div
+                id="training-main"
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px"
+              ></div>
+            </div>
+          </div>
+          <div id="tab-pm" class="tab-panel">
+            <div id="pm-kpi" class="kpi-grid"></div>
+            <div class="panel">
+              <div class="panel-title">🏗️ สถานะเครื่องมือรายทีม (Audit PM)</div>
+              <div id="pm-teams" class="team-grid"></div>
+            </div>
+          </div>
+          <div id="tab-node" class="tab-panel">
+            <div id="node-kpi" class="kpi-grid"></div>
+            <div class="panel">
+              <div class="panel-title">📡 สถานะเครื่องมือรายทีม (CM Node)</div>
+              <div id="node-teams" class="team-grid"></div>
+            </div>
+          </div>
+          <div id="tab-ofc" class="tab-panel">
+            <div id="ofc-kpi" class="kpi-grid"></div>
+            <div class="panel">
+              <div class="panel-title">🔌 สถานะเครื่องมือรายทีม (CM OFC)</div>
+              <div id="ofc-teams" class="team-grid"></div>
+            </div>
+          </div>
+
+          <div id="tab-contact" class="tab-panel">
+            <div style="max-width: 600px; margin: 0 auto; text-align: center">
+              <div class="panel" style="padding: 40px 20px">
+                <div
+                  class="panel-title"
+                  style="
+                    justify-content: center;
+                    font-size: 1.2rem;
+                    border: none;
+                  "
+                >
+                  💬 ติดต่อผู้พัฒนาระบบ
+                </div>
+                <div
+                  style="
+                    background: #f8fafc;
+                    padding: 20px;
+                    border-radius: 20px;
+                    display: inline-block;
+                    margin: 20px 0;
+                    border: 1px solid var(--border);
+                  "
+                >
+                  <img
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://line.me/ti/p/@kingkumaallday"
+                    style="width: 200px"
+                  />
+                </div>
+                <h2 style="color: var(--text); margin-bottom: 5px">
+                  Line Support
+                </h2>
+                <p
+                  style="
+                    color: var(--accent);
+                    font-weight: 700;
+                    margin-bottom: 20px;
+                  "
+                >
+                  @kingkumaallday
+                </p>
+                <a
+                  href="https://line.me/ti/p/@kingkumaallday"
+                  target="_blank"
+                  style="
+                    background: #06c755;
+                    color: white;
+                    text-decoration: none;
+                    padding: 12px 30px;
+                    border-radius: 50px;
+                    font-weight: 700;
+                    display: inline-block;
+                  "
+                  >เพิ่มเพื่อน LINE</a
+                >
+              </div>
+            </div>
+          </div>
+
+          <footer
+            style="margin-top: 40px; text-align: center; padding-bottom: 40px"
+          >
+            <p
+              id="updated-at"
+              style="font-size: 12px; color: var(--muted); margin-bottom: 15px"
+            ></p>
+            <button
+              onclick="refreshData()"
+              style="
+                padding: 12px 30px;
+                border-radius: 12px;
+                background: var(--accent);
+                color: #fff;
+                border: none;
+                cursor: pointer;
+                font-weight: 700;
+                transition: 0.3s;
+              "
+            >
+              🔄 REFRESH DATA
+            </button>
+          </footer>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const TABLE_LIMIT = 1000 // 🔥 ปรับตรงนี้จุดเดียวพอ
+      let currentVersion = null
+      let prevData = {
+        table: [],
+        failCount: 0
+      }
+
+      let isUpdating = false
+
+      // ================= INIT =================
+      function init() {
+        google.script.run
+          .withSuccessHandler(data => {
+            if (!data || data.error) {
+              alert('❌ โหลดข้อมูลไม่ได้: ' + data?.error)
+              return
+            }
+
+            currentVersion = data.version
+
+            const limitedTable = (data.ppe.tableRows || []).slice(
+              0,
+              TABLE_LIMIT
+            )
+
+            fullRender({
+              ...data,
+              ppe: {
+                ...data.ppe,
+                tableRows: limitedTable
+              }
+            })
+
+            prevData.table = limitedTable
+            prevData.failCount = countFail(limitedTable)
+          })
+          .withFailureHandler(err => {
+            console.error(err)
+            alert('❌ Server error')
+          })
+          .getAllDashboardData()
+      }
+
+      // ================= REALTIME ENGINE =================
+      function startRealtime() {
+        setInterval(() => {
+          if (isUpdating) return
+          isUpdating = true
+
+          google.script.run
+            .withSuccessHandler(serverVersion => {
+              if (currentVersion !== serverVersion) {
+                google.script.run
+                  .withSuccessHandler(data => {
+                    if (!data || data.error) {
+                      isUpdating = false
+                      return
+                    }
+
+                    smartUpdate(data)
+                    currentVersion = data.version
+                    isUpdating = false
+                  })
+                  .withFailureHandler(() => (isUpdating = false))
+                  .getAllDashboardData()
+              } else {
+                isUpdating = false
+              }
+            })
+            .withFailureHandler(() => (isUpdating = false))
+            .getVersion()
+        }, 10000)
+      }
+
+      // ================= SMART UPDATE =================
+      function smartUpdate(data) {
+        const fullTable = data.ppe?.tableRows || []
+        const newTable = fullTable.slice(0, TABLE_LIMIT)
+
+        // 🔥 หา row ใหม่
+        const newRows = newTable.filter(
+          n =>
+            !prevData.table.some(
+              p => p.no === n.no && p.mateline === n.mateline
+            )
+        )
+
+        // 🔥 FAIL count
+        const newFailCount = countFail(newTable)
+        const failDiff = newFailCount - prevData.failCount
+
+        if (newRows.length > 0) {
+          insertNewRows(newRows)
+          notify(`📥 เพิ่ม ${newRows.length} รายการใหม่`)
+        }
+
+        if (failDiff > 0) {
+          notify(`🚨 พบ FAIL เพิ่ม ${failDiff} รายการ`, 'error')
+          playAlertSound()
+        }
+
+        updateKPI(data.ppe.summary)
+
+        prevData.table = newTable
+        prevData.failCount = newFailCount
+      }
+
+      // ================= INSERT ROW =================
+      function insertNewRows(rows) {
+        const table = document.getElementById('ppe-table')
+
+        const html = rows
+          .map(
+            r => `
+    <tr class="new-row">
+      <td>${r.no}</td>
+      <td><code>${r.mateline}</code></td>
+      <td>${r.name}</td>
+      <td>${r.province}</td>
+      <td>${r.team}</td>
+      <td style="color:${color(r.r1Result)}">${r.r1Result}</td>
+      <td style="color:${color(r.r2Result)}">${r.r2Result}</td>
+      <td style="color:${color(r.r3Result)}">${r.r3Result}</td>
+    </tr>
+  `
+          )
+          .join('')
+
+        table.insertAdjacentHTML('afterbegin', html)
+
+        // 🔥 LIMIT TABLE (สำคัญ)
+        while (table.rows.length > TABLE_LIMIT) {
+          table.deleteRow(-1)
+        }
+
+        setTimeout(() => {
+          document.querySelectorAll('.new-row').forEach(el => {
+            el.classList.remove('new-row')
+          })
+        }, 3000)
+      }
+
+      // ================= KPI =================
+      function updateKPI(s = {}) {
+        document.getElementById('ppe-kpi').innerHTML =
+          kpiCard('👥 Manpower', s.total || 0, 'accent') +
+          kpiCard('✅ Complete', s.complete || 0, 'green') +
+          kpiCard('❌ Incomplete', s.incomplete || 0, 'red') +
+          kpiCard('⏳ Pending', s.waitingAudit || 0, 'yellow') +
+          kpiCard('📈 Success', (s.completePercent || 0) + '%', 'blue')
+      }
+
+      // ================= FAIL COUNT =================
+
+      function isFail(val) {
+        return val && val !== 'PASS' && val !== '-'
+      }
+
+      function countFail(rows) {
+        return rows.filter(
+          r => isFail(r.r1Result) || isFail(r.r2Result) || isFail(r.r3Result)
+        ).length
+      }
+
+      // ================= NOTIFICATION =================
+      function notify(msg, type = 'info') {
+        const div = document.createElement('div')
+        div.innerText = msg
+
+        const colors = {
+          info: '#00b4d8',
+          error: '#ef4444'
+        }
+
+        div.style.cssText = `
+    position:fixed;
+    top:20px;
+    right:20px;
+    background:${colors[type]};
+    color:#fff;
+    padding:12px 18px;
+    border-radius:10px;
+    font-weight:600;
+    z-index:9999;
+    box-shadow:0 4px 15px rgba(0,0,0,0.2);
+  `
+
+        document.body.appendChild(div)
+        setTimeout(() => div.remove(), 3000)
+      }
+
+      // ================= SOUND ALERT =================
+      function playAlertSound() {
+        const audio = new Audio(
+          'https://actions.google.com/sounds/v1/alarms/beep_short.ogg'
+        )
+        audio.play()
+      }
+
+      // ================= HELPER =================
+      function color(val) {
+        if (val === 'PASS') return 'var(--green)'
+        if (val === '-' || val === '') return 'var(--muted)'
+        return 'var(--red)'
+      }
+
+      function kpiCard(title, val, color) {
+        return `
+    <div class="panel" style="border-top:4px solid var(--${color})">
+      <div style="font-size:11px;color:var(--muted)">${title}</div>
+      <div style="font-size:26px;font-weight:700">${val}</div>
+    </div>`
+      }
+
+      // ================= FULL RENDER =================
+      function renderTable(rows) {
+        const table = document.getElementById('ppe-table')
+
+        table.innerHTML = rows
+          .map(
+            r => `
+    <tr>
+      <td>${r.no}</td>
+      <td><code>${r.mateline}</code></td>
+      <td>${r.name}</td>
+      <td>${r.province}</td>
+      <td>${r.team}</td>
+      <td style="color:${color(r.r1Result)}">${r.r1Result}</td>
+      <td style="color:${color(r.r2Result)}">${r.r2Result}</td>
+      <td style="color:${color(r.r3Result)}">${r.r3Result}</td>
+    </tr>
+  `
+          )
+          .join('')
+      }
+
+      // ================= START =================
+      window.onload = () => {
+        init()
+        startRealtime()
+        startClock()
+      }
+
+      function switchTab(tab, el) {
+        document
+          .querySelectorAll('.tab-panel')
+          .forEach(t => t.classList.remove('active'))
+        document
+          .querySelectorAll('.tab-btn')
+          .forEach(b => b.classList.remove('active'))
+
+        document.getElementById('tab-' + tab).classList.add('active')
+        el.classList.add('active')
+      }
+
+      function refreshData() {
+        document.getElementById('loader').style.display = 'flex'
+
+        google.script.run
+          .withSuccessHandler(data => {
+            const limitedTable = (data.ppe?.tableRows || []).slice(
+              0,
+              TABLE_LIMIT
+            )
+
+            fullRender({
+              ...data,
+              ppe: {
+                ...data.ppe,
+                tableRows: limitedTable
+              }
+            })
+
+            currentVersion = data.version
+          })
+          .getAllDashboardData()
+      }
+
+      function startClock() {
+        setInterval(() => {
+          const now = new Date()
+          const time = now.toLocaleTimeString('th-TH')
+          document.getElementById('clock').innerText = time
+        }, 1000)
+      }
+
+      function renderPPECharts(ppe) {
+        // ================= จังหวัด TOP 10 =================
+        const prov = ppe.byProvince || {}
+        const sorted = Object.entries(prov)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+
+        // ❗ กัน error ถ้าไม่มีข้อมูล
+        if (sorted.length === 0) {
+          document.getElementById('ppe-prov-chart').innerHTML =
+            "<div style='color:var(--muted)'>ไม่มีข้อมูล</div>"
+          return
+        }
+
+        // ================= PIE CHART =================
+        const total = sorted.reduce((sum, [, val]) => sum + val, 0)
+
+        if (total === 0) {
+          document.getElementById('ppe-prov-chart').innerHTML =
+            "<div style='color:var(--muted)'>ไม่มีข้อมูล</div>"
+          return
+        }
+
+        const colors = [
+          '#3b82f6',
+          '#10b981',
+          '#f59e0b',
+          '#ef4444',
+          '#8b5cf6',
+          '#06b6d4',
+          '#84cc16',
+          '#f97316',
+          '#e11d48',
+          '#22c55e'
+        ]
+
+        let gradient = ''
+        let current = 0
+
+        sorted.forEach(([name, val], i) => {
+          const percent = (val / total) * 100
+          gradient += `${colors[i % colors.length]} ${current}% ${
+            current + percent
+          }%,`
+          current += percent
+        })
+
+        gradient = gradient.slice(0, -1)
+
+        // legend + %
+        const legend = sorted
+          .map(([name, val], i) => {
+            const percent = ((val / total) * 100).toFixed(1)
+            return `
+      <div class="legend-item">
+        <div class="dot" style="background:${colors[i % colors.length]}"></div>
+        <span>${name} (${val} | ${percent}%)</span>
+      </div>
+    `
+          })
+          .join('')
+
+        document.getElementById('ppe-prov-chart').innerHTML = `
+    <div class="pie-container">
+      <div class="pie-chart" style="background: conic-gradient(${gradient})"></div>
+      <div class="pie-legend">${legend}</div>
+    </div>
+  `
+
+        // ================= Progress R1 R2 R3 =================
+        const r = ppe.rounds || { r1: 0, r2: 0, r3: 0, total: 1 }
+
+        const roundHTML = `
+    ${progressBar('R1', r.r1, r.total, 'green')}
+    ${progressBar('R2', r.r2, r.total, 'blue')}
+    ${progressBar('R3', r.r3, r.total, 'purple')}
+  `
+
+        document.getElementById('ppe-rounds-chart').innerHTML = roundHTML
+      }
+
+      function renderTraining(training = {}) {
+        // KPI
+        document.getElementById('training-kpi').innerHTML =
+          kpiCard('👥 ทั้งหมด', training.summary?.total || 0, 'accent') +
+          kpiCard('📡 Node', training.summary?.node || 0, 'blue') +
+          kpiCard('🏢 OFC', training.summary?.ofc || 0, 'purple') +
+          kpiCard('🛠️ PM', training.summary?.pm || 0, 'green')
+
+        // CONTENT
+        const html = `
+    <div class="panel">
+      <div style="font-weight:600;">G Course</div>
+      <div>ผ่าน: ${training.gCourse?.trained || 0}</div>
+      <div>รอ: ${training.gCourse?.waiting || 0}</div>
+      <div>เปอร์เซ็นต์: ${training.gCourse?.percent || 0}%</div>
+    </div>
+
+    <div class="panel">
+      <div style="font-weight:600;">EC Course</div>
+      <div>ผ่าน: ${training.ecCourse?.trained || 0}</div>
+      <div>รอ: ${training.ecCourse?.waiting || 0}</div>
+      <div>เปอร์เซ็นต์: ${training.ecCourse?.percent || 0}%</div>
+    </div>
+  `
+
+        document.getElementById('training-main').innerHTML = html
+      }
+
+      function renderTeams(containerId, kpiId, data) {
+  const container = document.getElementById(containerId)
+  const kpi = document.getElementById(kpiId)
+  if (!container || !kpi || !data) return
+
+  const s = data.summary || {}
+
+  // ปรับการแสดงผล KPI ให้เรียงตามความหมายและตัวแปรที่ถูกต้อง
+  kpi.innerHTML = `
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px;">
+      
+      <div class="kpi-card" style="background: var(--surface2); padding:10px; border-radius:8px; border-left:4px solid var(--accent);">
+        <div style="font-size:12px; color:var(--muted)">จำนวนทีมทั้งหมด</div>
+        <div style="font-size:22px; font-weight:600; color:var(--text)">
+          ${s.totalTeams || 0} <span style="font-size:12px; font-weight:400;">ทีม</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="background: #fff4e5; padding:10px; border-radius:8px; border-left:4px solid var(--yellow);">
+        <div style="font-size:12px; color:var(--muted)">รอแก้ Def.</div>
+        <div style="font-size:22px; font-weight:600; color:#b45309;">
+          ${s.waitingDef || 0}
+          <span style="font-size:12px; color:var(--muted); font-weight:400;">(${s.pctWaitingDef || 0}%)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="background: #e6fffa; padding:10px; border-radius:8px; border-left:4px solid var(--green);">
+        <div style="font-size:12px; color:var(--muted)">Complete 100%</div>
+        <div style="font-size:22px; font-weight:600; color:#047857;">
+          ${s.complete100 || 0}
+          <span style="font-size:12px; color:var(--muted); font-weight:400;">(${s.pctComplete100 || 0}%)</span>
+        </div>
+      </div>
+
+      <div class="kpi-card" style="background: #f0f5ff; padding:10px; border-radius:8px; border-left:4px solid var(--blue);">
+        <div style="font-size:12px; color:var(--muted)">รอตรวจเครื่องมือ</div>
+        <div style="font-size:22px; font-weight:600; color:var(--blue);">
+          ${s.waitingAudit || 0}
+          <span style="font-size:12px; color:var(--muted); font-weight:400;">(${s.pctWaiting || 0}%)</span>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  // ส่วนแสดงรายชื่อทีมด้านล่าง
+  const teams = data.teams || [];
+  if (teams.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px; color:var(--muted);">ไม่พบข้อมูลทีม</div>';
+    return;
+  }
+
+  container.innerHTML = teams.map(t => {
+    const score = t.done || 0;
+    return `
+      <div class="team-card ${t.status === 'done' ? 'done' : 'pending'}">
+        <div class="card-name">${t.name}</div>
+        <div class="card-score">${score}%</div>
+      </div>
+    `;
+  }).join('');
+}
+
+      function progressBar(label, val, total, color) {
+        const percent = total > 0 ? ((val / total) * 100).toFixed(1) : 0
+        return `
+    <div style="margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; font-size:12px;">
+        <span>${label}</span>
+        <b>${percent}%</b>
+      </div>
+      <div class="pg-track">
+        <div class="pg-fill" style="width:${percent}%; background:var(--${color})"></div>
+      </div>
+    </div>
+  `
+      }
+
+      function fullRender(data) {
+        if (!data) return
+
+        // PPE
+        updateKPI(data.ppe?.summary || {})
+        renderTable(data.ppe?.tableRows || [])
+        renderPPECharts(data.ppe || {})
+
+        // Training
+        renderTraining(data.training || {})
+
+        // ✅ เพิ่ม 3 อันนี้
+        renderTeams('pm-teams', 'pm-kpi', data.pm || {})
+        renderTeams('node-teams', 'node-kpi', data.node || {})
+        renderTeams('ofc-teams', 'ofc-kpi', data.ofc || {})
+
+        document.getElementById('updated-at').innerText =
+          'อัปเดตล่าสุด: ' + (data.updatedAt || '-')
+
+        document.getElementById('loader').style.display = 'none'
+      }
+    </script>
+  </body>
+</html>
