@@ -188,12 +188,22 @@ function getPPEData(ss) {
   const data = sheet.getRange(1, 1, lastRow, 32).getValues();
 
   // ─── Summary จากแถวที่ 1 และ 2 ──────────────
-  const summary = {
-    complete: Number(data[0][4]) || 0,
-    incomplete: Number(data[0][6]) || 0,
-    total: Number(data[0][9]) || 0,
-    waitingAudit: Number(data[1][4]) || 0,
-  };
+  //const summary = {
+  //  complete: Number(data[0][4]) || 0,
+  //  incomplete: Number(data[0][6]) || 0,
+  //  total: Number(data[0][9]) || 0,
+  //  waitingAudit: Number(data[1][4]) || 0,
+  //};
+
+  // ─── Summary จากแถวที่ 1 ────────────── 
+  // Success → คำนวณจาก C1 / J1 * 100 = 170/170 = 100%
+const summary = {
+  complete:     Number(data[0][2]) || 0,  // C1 = PPE ครบ ✅
+  incomplete:   Number(data[0][4]) || 0,  // E1 = PPE ไม่ครบ ✅
+  total:        Number(data[0][9]) || 0,  // J1 = Total ✅
+  waitingAudit: Number(data[0][6]) || 0,  // G1 = รอ Audit ✅
+};
+  
   summary.completePercent =
     summary.total > 0
       ? Math.round((summary.complete / summary.total) * 1000) / 10
