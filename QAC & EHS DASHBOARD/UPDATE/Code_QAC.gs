@@ -21,10 +21,6 @@ function onEdit(e) {
 // ============================================================
 // MAIN: ดึงข้อมูลทั้งหมดในครั้งเดียว (cached 5 นาที)
 // ============================================================
-// ============================================================
-// MAIN: ดึงข้อมูลทั้งหมดในครั้งเดียว (ปรับปรุงใหม่)
-// ============================================================
-/*
 function getAllDashboardData() {
   try {
     const cache = CacheService.getScriptCache();
@@ -44,10 +40,9 @@ function getAllDashboardData() {
       version: Number(version),
       ppe: getPPEData(ss),
       training: getTrainingData(ss),
-      // ✅ แก้ไข: เปลี่ยนมาเรียกใช้ฟังก์ชัน Universal แทนฟังก์ชันแยกเดิม
-      pm:   getAuditUniversalData(ss, SHEET_NAMES.AUDIT_PM),
-      node: getAuditUniversalData(ss, SHEET_NAMES.AUDIT_NODE),
-      ofc:  getAuditUniversalData(ss, SHEET_NAMES.AUDIT_OFC),
+      pm:   getAuditUniversalData(ss, SHEET_NAMES.AUDIT_PM.trim()),
+      node: getAuditUniversalData(ss, SHEET_NAMES.AUDIT_NODE.trim()),
+      ofc: getAuditUniversalData(ss, SHEET_NAMES.AUDIT_OFC.trim()),
       updatedAt: Utilities.formatDate(new Date(), "GMT+7", "dd/MM/yyyy HH:mm"),
     };
 
@@ -57,13 +52,13 @@ function getAllDashboardData() {
     return { error: e.toString() };
   }
 }
-*/
+
 
 // ============================================================
 // 🚜 ฟังก์ชันครอบจักรวาล: กำหนดตำแหน่งดึงข้อมูลแยกรายหน้า
 // ============================================================
 function getAuditUniversalData(ss, sheetName) {
-  const sheet = ss.getSheetByName(sheetName.trim());
+  const sheet = ss.getSheets().find(s => s.getName().trim() === sheetName.trim());
   if (!sheet) return { summary: {}, teams: [] };
 
   // --- 1. ตั้งค่า Default (ถ้าหน้าไหนไม่ได้ระบุข้างล่าง จะใช้ค่าชุดนี้) ---
@@ -79,13 +74,14 @@ function getAuditUniversalData(ss, sheetName) {
 
   // --- 2. ส่วนสำคัญ: กำหนดตำแหน่งแยกตามชื่อหน้า (พี่แก้ตรงนี้ได้เลย) ---
   
-  if (sheetName === SHEET_NAMES.AUDIT_PM) {
-    
-    // หน้า PM: ใช้ค่ามาตรฐาน แต่ถ้าอยากเปลี่ยนก็แก้ตรงนี้
+  if (sheetName.trim() === SHEET_NAMES.AUDIT_PM.trim()) {
     config.colTotal = "I";
+    config.colWait  = "J";
+    config.colDone  = "K";
+    config.colAudit = "L";
     config.teamHeaderRow = 7;
-  } 
-  else if (sheetName === SHEET_NAMES.AUDIT_NODE) {
+  }
+  else if (sheetName === SHEET_NAMES.AUDIT_NODE.trim()) {
     // หน้า CM Node: พี่บอกว่าจำนวนทีมอยู่ที่ H3
     config.colTotal = "H";     // จำนวนทีม (H3)
     config.colWait = "I";      // รอแก้ (I3)
@@ -93,8 +89,8 @@ function getAuditUniversalData(ss, sheetName) {
     config.colAudit = "K";     // รอตรวจ (K3)
     config.teamHeaderRow = 7;  // ชื่อทีมอยู่แถว 7
   } 
-  else if (sheetName === SHEET_NAMES.AUDIT_OFC) {
-    // กำหนดตำแหน่งตามที่พี่ระบุมาเป๊ะๆ
+  else if (sheetName === SHEET_NAMES.AUDIT_OFC.trim()) {
+    // กำหนดตำแหน่งตามที่ระบุมาเป๊ะๆ
     config = {
       dataRow: 3,        // แถวที่ 3 (สำหรับค่าตัวเลข H3, I3, J3, K3)
       pctRow: 4,         // แถวที่ 4 (สำหรับค่า % สรุป)
@@ -106,43 +102,50 @@ function getAuditUniversalData(ss, sheetName) {
     };
   }
 
-  // --- 3. ส่วนประมวลผลดึงข้อมูล (ไม่ต้องแก้ไขส่วนนี้) ---
+  // --- 3. ส่วนประมวลผลดึงข้อมูล ---
   const colToIndex = (col) => {
     let base = 0, ch = col.toUpperCase();
     for (let i = 0; i < ch.length; i++) base = base * 26 + ch.charCodeAt(i) - 64;
     return base - 1;
   };
 
-  const data = sheet.getRange(1, 1, 15, 100).getValues(); 
-  const r = config.dataRow - 1;
+  const data = sheet.getRange(1, 1, 15, 100).getValues();
+  const r  = config.dataRow - 1;
   const pr = config.pctRow - 1;
 
   const summary = {
-    totalTeams:   Number(data[r][colToIndex(config.colTotal)]) || 0,
-    waitingDef:   Number(data[r][colToIndex(config.colWait)]) || 0,
-    complete100:  Number(data[r][colToIndex(config.colDone)]) || 0,
-    waitingAudit: Number(data[r][colToIndex(config.colAudit)]) || 0,
+    totalTeams:     Number(data[r][colToIndex(config.colTotal)]) || 0,
+    waitingDef:     Number(data[r][colToIndex(config.colWait)])  || 0,
+    complete100:    Number(data[r][colToIndex(config.colDone)])  || 0,
+    waitingAudit:   Number(data[r][colToIndex(config.colAudit)]) || 0,
     pctWaitingDef:  parseAuditPercent(data[pr][colToIndex(config.colWait)]),
     pctComplete100: parseAuditPercent(data[pr][colToIndex(config.colDone)]),
     pctWaiting:     parseAuditPercent(data[pr][colToIndex(config.colAudit)])
   };
 
   const teams = [];
-  const tr = config.teamHeaderRow - 1; 
-  const tpr = tr - 1; // แถว % ของแต่ละทีม มักอยู่บนชื่อทีม 1 แถว
+  const tr  = config.teamHeaderRow - 1;
+  const tpr = tr - 1;
 
-  if (data[tr]) {
+  if (sheetName.trim() === SHEET_NAMES.AUDIT_OFC.trim()) {
+    // ✅ OFC: ชื่อทีม C7,E7,G7... % อยู่ C6,E6,G6...
+    for (let col = 2; col < 100; col += 2) {
+      const name = String(data[tr][col] || "").trim();
+      if (!name || name === "Team" || name === "Item") continue;
+      const pct = parseAuditPercent(data[tpr][col]);
+      teams.push({ name, done: pct, status: pct >= 100 ? "done" : "pending" });
+    }
+  } else {
+    // PM / NODE: หาคอลัมน์ที่มีคำว่า "Team"
     let startCol = -1;
-    // หาคอลัมน์ที่มีคำว่า "Team" เพื่อเริ่มดึงรายชื่อ
     for (let c = 0; c < 30; c++) {
       if (String(data[tr][c]).trim() === "Team") { startCol = c; break; }
     }
-
     if (startCol !== -1) {
       for (let col = startCol; col < 100; col += 2) {
-        const name = String(data[tr][col] || "").trim(); 
-        if (!name || name === "" || name === "Team" || name === "Item") continue;
-        const pct = parseAuditPercent(data[tpr][col]); 
+        const name = String(data[tr][col] || "").trim();
+        if (!name || name === "Team" || name === "Item") continue;
+        const pct = parseAuditPercent(data[tpr][col]);
         teams.push({ name, done: pct, status: pct >= 100 ? "done" : "pending" });
       }
     }
@@ -185,12 +188,21 @@ function getPPEData(ss) {
   const data = sheet.getRange(1, 1, lastRow, 32).getValues();
 
   // ─── Summary จากแถวที่ 1 และ 2 ──────────────
-  const summary = {
-    complete: Number(data[0][4]) || 0,
-    incomplete: Number(data[0][6]) || 0,
-    total: Number(data[0][9]) || 0,
-    waitingAudit: Number(data[1][4]) || 0,
-  };
+  //const summary = {
+  //  complete: Number(data[0][4]) || 0,
+  //  incomplete: Number(data[0][6]) || 0,
+  //  total: Number(data[0][9]) || 0,
+  //  waitingAudit: Number(data[1][4]) || 0,
+  //};
+
+  // ─── Summary จากแถวที่ 1 ──────────────
+const summary = {
+  complete:     Number(data[0][2]) || 0,  // C1 = PPE ครบ ✅
+  incomplete:   Number(data[0][4]) || 0,  // E1 = PPE ไม่ครบ ✅
+  total:        Number(data[0][9]) || 0,  // J1 = Total ✅
+  waitingAudit: Number(data[0][6]) || 0,  // G1 = รอ Audit ✅
+};
+  
   summary.completePercent =
     summary.total > 0
       ? Math.round((summary.complete / summary.total) * 1000) / 10
@@ -495,4 +507,64 @@ function debugOFCFull() {
       }
     }
   }
+}
+
+// Debug
+function debugOFCLive() {
+  CacheService.getScriptCache().remove("qac_all");
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  
+  // ตรวจสอบชื่อ Sheet ทั้งหมดก่อน
+  const allSheets = ss.getSheets().map(s => s.getName());
+  Logger.log("📋 All sheets: " + JSON.stringify(allSheets));
+  Logger.log("🔍 Looking for: '" + SHEET_NAMES.AUDIT_OFC + "'");
+
+  const sheet = ss.getSheetByName(SHEET_NAMES.AUDIT_OFC.trim());
+  if (!sheet) {
+    Logger.log("❌ ไม่พบ Sheet!");
+    return;
+  }
+
+  const data = sheet.getRange(1, 1, 8, 15).getValues();
+
+  // พิมพ์ทุก cell แถว 1-8 ที่มีค่า
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 15; c++) {
+      if (data[r][c] !== "") {
+        Logger.log(`Row${r+1} Col${c+1} [${String.fromCharCode(65+c)}]: "${data[r][c]}" (${typeof data[r][c]})`);
+      }
+    }
+  }
+}
+
+// DeBug2
+function debugOFCLive2() {
+  CacheService.getScriptCache().remove("qac_all");
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  
+  // หา Sheet โดย trim ชื่อ
+  const sheet = ss.getSheets().find(s => s.getName().trim() === "Sum Audit Tools CM OFC");
+  if (!sheet) { Logger.log("❌ ยังหาไม่เจอ!"); return; }
+  
+  Logger.log("✅ พบ Sheet: '" + sheet.getName() + "'");
+  
+  const data = sheet.getRange(1, 1, 8, 15).getValues();
+  
+  // พิมพ์ทุก cell แถว 1-8 ที่มีค่า
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 15; c++) {
+      if (data[r][c] !== "") {
+        Logger.log(`Row${r+1} [${String.fromCharCode(65+c)}${r+1}]: "${data[r][c]}"`);
+      }
+    }
+  }
+}
+
+function testOFCDirect() {
+  CacheService.getScriptCache().remove("qac_all");
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  Logger.log("AUDIT_OFC name: '" + SHEET_NAMES.AUDIT_OFC + "'");
+  const result = getAuditUniversalData(ss, SHEET_NAMES.AUDIT_OFC.trim());
+  Logger.log("summary: " + JSON.stringify(result.summary));
+  Logger.log("teams: " + result.teams.length);
 }
