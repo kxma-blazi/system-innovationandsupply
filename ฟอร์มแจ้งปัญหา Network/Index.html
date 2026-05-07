@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f5f5f5; padding-top: 20px; }
+    .card-form { max-width: 650px; margin: auto; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden; min-height: 400px; }
+    .card-header { background-color: #f8fff9; border-bottom: 1px solid #e0e0e0; padding: 20px; text-align: center; }
+    .stepper { display: flex; justify-content: space-between; padding: 20px 50px; background: #fff; }
+    .step { text-align: center; flex: 1; position: relative; }
+    .step-circle { width: 35px; height: 35px; border-radius: 50%; background: #eee; display: flex; align-items: center; justify-content: center; margin: 0 auto 5px; color: #999; font-weight: bold; }
+    .step.active .step-circle { background: #2ecc71; color: white; }
+    .step-label { font-size: 11px; color: #999; }
+    .step.active .step-label { color: #2ecc71; font-weight: bold; }
+    .form-content { padding: 30px; }
+    .btn-next { background-color: #2ecc71; color: white; border: none; padding: 10px 25px; border-radius: 10px; }
+    .btn-next:hover { background-color: #27ae60; }
+    .hidden { display: none; }
+    
+    /* สไตล์สำหรับหน้า Success */
+    .success-container { text-align: center; padding: 40px 20px; }
+    .success-icon { font-size: 70px; color: #2ecc71; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="card-form" id="mainCard">
+  <div id="formHeader">
+    <div class="card-header">
+      <h4 style="color: #27ae60; font-weight: bold;">📝 ฟอร์มแจ้งปัญหา Network</h4>
+    </div>
+
+    <div class="stepper">
+      <div class="step active" id="s1"> <div class="step-circle">1</div> <div class="step-label">ข้อมูลผู้แจ้ง</div> </div>
+      <div class="step" id="s2"> <div class="step-circle">2</div> <div class="step-label">รายละเอียดปัญหา</div> </div>
+      <div class="step" id="s3"> <div class="step-circle">3</div> <div class="step-label">รูปภาพหลักฐาน</div> </div>
+    </div>
+  </div>
+
+  <div class="form-content" id="formBody">
+    <form id="mainForm">
+      <div id="step-1">
+        <label class="mb-2">วันที่ เวลา <span class="text-danger">*</span></label>
+        <input type="datetime-local" class="form-control mb-3" id="datetime" required>
+        
+        <label class="mb-2">ชื่อ นามสกุล <span class="text-danger">*</span></label>
+        <input type="text" class="form-control mb-3" id="fullname" placeholder="ระบุชื่อ-นามสกุล" required>
+        
+        <label class="mb-2">หน่วยงาน <span class="text-danger">*</span></label>
+        <select class="form-select mb-3" id="department" required>
+          <option value="" disabled selected>-- เลือกหน่วยงาน --</option>
+          <option>TRUE</option>
+          <option>W&W</option>
+          <option>System</option>
+          <option>Outsource</option>
+          <option>Sub Contractor</option>
+        </select>
+        
+        <label class="mb-2">เบอร์ติดต่อ <span class="text-danger">*</span></label>
+        <input type="tel" class="form-control mb-3" id="phone" placeholder="08XXXXXXXX" required>
+
+        <label class="mb-2">อีเมล (ตัวเลือก)</label>
+        <input type="email" class="form-control mb-3" id="email" placeholder="example@email.com">
+        
+        <label class="mb-2">Site ID. <span class="text-danger">*</span></label>
+        <input type="text" class="form-control mb-3" id="siteId" placeholder="ระบุรหัสสถานี" required>
+        
+        <div class="text-end mt-4">
+          <button type="button" class="btn btn-next" onclick="go(2)">ถัดไป ➔</button>
+        </div>
+      </div>
+
+      <div id="step-2" class="hidden">
+        <label class="mb-2">ประเภทปัญหา <span class="text-danger">*</span></label>
+        <select class="form-select mb-3" id="issueType" required>
+          <option value="" disabled selected>-- เลือกประเภท --</option>
+          <option>Internet ล่ม</option>
+          <option>ความเร็วตก</option>
+          <option>อุปกรณ์เสีย</option>
+          <option>อื่นๆ</option>
+        </select>
+        <label class="mb-2">รายละเอียดปัญหา <span class="text-danger">*</span></label>
+        <textarea class="form-control mb-3" id="description" rows="4" placeholder="ระบุอาการเบื้องต้น..."></textarea>
+        
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-light" onclick="go(1)">ย้อนกลับ</button>
+          <button type="button" class="btn btn-next" onclick="go(3)">ถัดไป ➔</button>
+        </div>
+      </div>
+
+      <div id="step-3" class="hidden">
+        <label class="mb-2">อัปโหลดรูปภาพหลักฐาน</label>
+        <input type="file" class="form-control mb-4" id="imageFile" accept="image/*">
+        
+        <div class="d-flex justify-content-between">
+          <button type="button" class="btn btn-light" onclick="go(2)">ย้อนกลับ</button>
+          <button type="button" class="btn btn-success" id="btnSubmit" onclick="submitForm()">ยืนยันแจ้งปัญหา ➔</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ฟังก์ชันสลับหน้า Step
+  function go(step) {
+    document.getElementById('step-1').classList.add('hidden');
+    document.getElementById('step-2').classList.add('hidden');
+    document.getElementById('step-3').classList.add('hidden');
+    document.getElementById('step-'+step).classList.remove('hidden');
+    
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('s'+step).classList.add('active');
+  }
+
+  // ฟังก์ชันส่งข้อมูล
+  function submitForm() {
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true; 
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> กำลังส่งข้อมูล...';
+    
+    const fileInput = document.getElementById('imageFile');
+    const file = fileInput.files[0];
+    
+    const data = {
+      datetime: document.getElementById('datetime').value,
+      fullname: document.getElementById('fullname').value,
+      department: document.getElementById('department').value,
+      phone: document.getElementById('phone').value,
+      email: document.getElementById('email').value,
+      siteId: document.getElementById('siteId').value,
+      issueType: document.getElementById('issueType').value,
+      description: document.getElementById('description').value
+    };
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        data.imageFile = { base64: e.target.result, type: file.type };
+        send(data);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      send(data);
+    }
+  }
+
+  function send(data) {
+    google.script.run
+    .withSuccessHandler(res => {
+      if(res.status === "success") {
+        showSuccessUI(); // เรียกใช้ฟังก์ชันแสดงหน้าจอสำเร็จ
+      } else {
+        alert("เกิดข้อผิดพลาด: " + res.message);
+        resetBtn();
+      }
+    })
+    .withFailureHandler(err => {
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + err);
+      resetBtn();
+    })
+    .processAll(data);
+  }
+
+  function resetBtn() {
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = false;
+    btn.innerHTML = "ยืนยันแจ้งปัญหา ➔";
+  }
+
+  // ฟังก์ชันแสดงหน้าจอสำเร็จ (Success Page)
+  function showSuccessUI() {
+  // 1. ซ่อนส่วนหัวและ Stepper
+  document.getElementById('formHeader').classList.add('hidden');
+  
+  // 2. ดึง URL ของ Web App ปัจจุบันมาใช้
+  google.script.run.withSuccessHandler(function(url) {
+    // เปลี่ยนเนื้อหาเป็นหน้า Success
+    document.getElementById('formBody').innerHTML = `
+      <div class="success-container">
+        <div class="success-icon">✔️</div>
+        <h2 style="color: #27ae60; font-weight: bold; margin-bottom: 10px;">แจ้งเรื่องเรียบร้อยแล้ว!</h2>
+        <p style="color: #666; margin-bottom: 30px;">ระบบได้บันทึกข้อมูลและส่งอีเมลแจ้งเจ้าหน้าที่ IT เรียบร้อยแล้วครับ</p>
+        
+        <button onclick="window.top.location.href='${url}'" class="btn btn-next">
+          กลับหน้าหลัก / แจ้งเรื่องใหม่
+        </button>
+      </div>
+    `;
+  }).getServiceUrl(); // เรียกฟังก์ชันใน .gs เพื่อเอา URL
+}
+</script>
+</body>
+</html>
