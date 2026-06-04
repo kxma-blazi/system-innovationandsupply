@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสแกนภาพและแปลภาษาจีน-ไทย</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center py-10 px-4 font-sans">
+
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-blue-600 mb-2">🇨🇳 AI Scanner & Translator 🇹🇭</h1>
+        <p class="text-center text-gray-500 mb-8 text-sm md:text-base">ระบบสแกนรูปภาพภาษาจีน และแปลเป็นภาษาไทยอัตโนมัติ</p>
+
+        <div class="border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-xl p-6 text-center cursor-pointer transition relative bg-gray-50 group">
+            <input type="file" id="imageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <div id="uploadPrompt">
+                <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-blue-500 transition mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="text-sm md:text-base font-medium text-gray-700">คลิกเพื่อเลือกรูปภาพ หรือลากไฟล์มาวางที่นี่</p>
+                <p class="text-xs text-gray-400 mt-1">รองรับไฟล์ PNG, JPG, JPEGที่มีตัวอักษรจีน</p>
+            </div>
+            <img id="imagePreview" class="hidden max-h-64 mx-auto rounded-lg shadow-sm" src="#" alt="Preview">
+        </div>
+
+        <div id="statusBox" class="hidden mt-6 p-4 bg-blue-50 rounded-xl flex items-center justify-center space-x-3">
+            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <p id="statusText" class="text-blue-700 text-sm md:text-base font-medium">กำลังโหลดระบบ...</p>
+        </div>
+
+        <div id="resultSection" class="hidden mt-8 space-y-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">ข้อความภาษาจีนที่สแกนได้ (Original Chinese):</label>
+                <div id="ocrResult" class="w-full bg-gray-100 p-4 rounded-xl border border-gray-200 text-gray-800 font-mono whitespace-pre-wrap min-h-[60px]"></div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-blue-700 mb-2">คำแปลภาษาไทย (Thai Translation):</label>
+                <div id="translationResult" class="w-full bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-900 font-medium whitespace-pre-wrap min-h-[60px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ วาง URL เว็บแอปของ Google Apps Script ที่ก๊อปปี้มาลงในเครื่องหมายคำพูดด้านล่างนี้ครับ
+        const GOOGLE_SCRIPT_URL = "ใส่_URL_เว็บแอป_ของฝั่งคุณตรงนี้";
+
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const uploadPrompt = document.getElementById('uploadPrompt');
+        const statusBox = document.getElementById('statusBox');
+        const statusText = document.getElementById('statusText');
+        const resultSection = document.getElementById('resultSection');
+        const ocrResult = document.getElementById('ocrResult');
+        const translationResult = document.getElementById('translationResult');
+
+        imageInput.addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // แสดงรูปพรีวิว
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                uploadPrompt.classList.add('hidden');
+            }
+            reader.readAsDataURL(file);
+
+            // รีเซ็ตหน้าจอผลลัพธ์เดิม
+            resultSection.classList.add('hidden');
+            statusBox.classList.remove('hidden');
+            
+            try {
+                // สเตปที่ 1: สแกนภาพด้วย Tesseract.js (ใช้โหมดภาษา chi_sim = จีนตัวย่อ)
+                statusText.innerText = "กำลังสแกนวิเคราะห์ตัวอักษรจีนจากรูปภาพ...";
+                
+                const ocrData = await Tesseract.recognize(file, 'chi_sim', {
+                    logger: m => {
+                        if(m.status === 'recognizing text') {
+                            statusText.innerText = `กำลังสแกนภาพ: ${Math.round(m.progress * 100)}%`;
+                        }
+                    }
+                });
+
+                const chineseText = ocrData.data.text;
+                ocrResult.innerText = chineseText || "ไม่พบตัวอักษรในรูปภาพ";
+
+                if (!chineseText || chineseText.trim() === "") {
+                    throw new Error("ระบบสแกนไม่พบตัวอักษรจีนในรูปภาพนี้ กรุณาลองเปลี่ยนรูปใหม่ครับ");
+                }
+
+                // สเตปที่ 2: ส่งข้อความจีนไปแปลผ่าน Google Script API
+                statusText.innerText = "กำลังส่งข้อมูลไปแปลภาษาไทย...";
+                
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({ text: chineseText })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    translationResult.innerText = result.translatedText;
+                    resultSection.classList.remove('hidden');
+                } else {
+                    throw new Error(result.error || "เกิดข้อผิดพลาดในการแปลภาษา");
+                }
+
+            } catch (error) {
+                alert(error.message);
+                console.error(error);
+            } finally {
+                statusBox.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
